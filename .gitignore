@@ -1,6 +1,26 @@
 # Windows Zone.Identifier files (WSL download metadata)
-*Zone.Identifier
+*:Zone.Identifier
 
 # Environment / secrets
 .env
 .env.local
+
+# Dependency directories
+**/node_modules/
+**/vendor/
+**/.venv/
+**/venv/
+**/.bundle/
+
+# Package-manager caches
+**/.npm/
+**/.pnpm-store/
+**/.yarn/cache/
+**/.yarn/unplugged/
+**/.cache/
+**/__pycache__/
+
+# Generated dependency/build metadata
+**/*.pyc
+**/*.pyo
+**/.vite/
