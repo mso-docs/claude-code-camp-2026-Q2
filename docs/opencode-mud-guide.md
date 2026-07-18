@@ -45,7 +45,7 @@ OpenCode uses four layers:
 
 1. `opencode.json` configures the Ollama provider and default model.
 2. `.opencode/agents/mud-evaluator.md` defines the primary evaluation agent and its permissions.
-3. `.opencode/skills/` provides server, login, gameplay, and CLI-tool workflows.
+3. `.opencode/skills/` provides server, login, gameplay, report, durable-memory, and CLI-tool workflows.
 4. `week0_explore/explore_architecture/001_playing_agent/AGENTS.md` defines the test objectives, checkpoint cadence, memory requirements, and stop/continue protocol.
 
 Launch from the directory containing `AGENTS.md`. OpenCode discovers project configuration and skills while walking up to the Git worktree, but it does not search downward from the repository root for nested `AGENTS.md` files.
@@ -94,18 +94,34 @@ Control messages are:
 
 The agent executes no more than one top-level test per message.
 
+For Test 2, "practice `kick`" means training with Dummy's Sentress guildmaster,
+not using `kick` against an NPC. The destination is the Tournament and Practice
+Yard inside the Guild of Swordsmen. From the Temple, the confirmed navigation
+lead is `s, s, e, e, s, e, s`; the agent must still verify each room live and
+then issue `practice kick` while the guildmaster is present.
+
 ## OpenCode Completion Reports
 
 The evaluator writes new reports without overwriting the earlier Qwen/Pi results:
 
 ```text
 week0_explore/explore_architecture/002_agent_skills/completion-report/
-├── opencode-qwen3.6-test2-completion.md
-├── opencode-qwen3.6-test3-completion.md
-└── opencode-qwen3.6-test4-completion.md
+├── opencode-qwen3.6-35b-a3b-test2-completion.md
+├── opencode-qwen3.6-35b-a3b-test3-completion.md
+└── opencode-qwen3.6-35b-a3b-test4-completion.md
 ```
 
 Only these reports control OpenCode test selection. Existing `qwen3.6-test*-completion.md` statuses are context, not proof that an OpenCode run passed.
+
+The `write-completion-report` skill initializes the selected report before
+gameplay and updates it after each numbered test step and memory checkpoint.
+The `manage-mud-memory` skill reads `data/player.md`, `data/world.md`,
+`data/commands.md`, and the selected report at the start of every session, then
+writes and verifies durable handoffs throughout the test. `data/commands.md` is
+a positive-only TBA MUD glossary: only commands proven to work by captured game
+output are added, while failed guesses remain in the current report. This
+file-backed memory lets a new model session resume verified state; it does not
+retrain or modify the model itself.
 
 ## Server Commands
 
