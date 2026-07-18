@@ -25,7 +25,46 @@ If the required model is not present, pull it before launching Pi:
 ollama pull <model-name>
 ```
 
-## 2. Give Pi project instructions and a startup task
+## 2. Create an Agent Skill with Skill Expert
+
+Use Ollama's [`cmdmbox/skill-expert`](https://ollama.com/cmdmbox/skill-expert) model to turn a plain-language capability description into the contents of a `SKILL.md` file. The model is designed specifically for prompts in the form `Create a skill for ...`, so describe the reusable task the agent should learn rather than asking for a general tutorial.
+
+### Copy-paste template
+
+Copy this template and replace the two values on the first two lines:
+
+```bash
+SKILL_NAME="your-skill-name"
+SKILL_REQUEST="the capability, workflow, guardrails, and expected output"
+
+mkdir -p "002_agent_skills/$SKILL_NAME"
+ollama run cmdmbox/skill-expert \
+  --hidethinking \
+  --nowordwrap \
+  "Create a skill for $SKILL_REQUEST" \
+  > "002_agent_skills/$SKILL_NAME/SKILL.md"
+```
+
+For example, this verified test command creates a draft skill for Git operations:
+
+```bash
+ollama run cmdmbox/skill-expert \
+  --hidethinking \
+  --nowordwrap \
+  "Create a skill for git operations" \
+  > 002_agent_skills/git-skill.md
+```
+
+Each part of the command has a purpose:
+
+- `Create a skill for ...` gives the specialist model a direct capability description from which it can generate YAML frontmatter and operational instructions. Adding the workflow, guardrails, and expected output makes the generated skill more specific and useful.
+- `--hidethinking` hides the model's reasoning so it is not mixed into the generated skill.
+- `--nowordwrap` disables Ollama's interactive terminal word wrapping. Without it, redirected output can contain literal ANSI cursor-control characters such as `ESC[1D` and `ESC[K`, along with duplicated word fragments.
+- `>` writes the final response to the requested file. It overwrites that file if it already exists.
+
+Review the generated instructions, safety constraints, and shell commands before using the skill. For an installable Agent Skill, keep it in a named directory with the standard filename `<skill-name>/SKILL.md`; the first template creates that structure.
+
+## 3. Give Pi project instructions and a startup task
 
 Pi automatically discovers `AGENTS.md` (plural) in the working directory. Store the reusable MUD rules, memory behavior, and safety constraints in:
 
