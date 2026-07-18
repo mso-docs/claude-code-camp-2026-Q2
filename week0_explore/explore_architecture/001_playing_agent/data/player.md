@@ -5,7 +5,7 @@ Character: Dummy
 Class: Sentress
 Level: 3
 Current test: Test 4
-Test status: In Progress
+Test status: Active - logging in
 Last completed test: Test 3
 
 ## Last Observed Position Context
