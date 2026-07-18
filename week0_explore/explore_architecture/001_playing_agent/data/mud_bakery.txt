@@ -1,0 +1,5 @@
+##   Available   Item                                               Cost
+----------------------------------------------------------------------------
+  1)  Unlimited   A danish pastry                                       7
+  2)  Unlimited   A bread                                              14
+  3)  Unlimited   A waybread                                           71
