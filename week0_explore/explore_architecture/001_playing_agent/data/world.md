@@ -1,6 +1,10 @@
 # World Knowledge: City of Midgaard
 
 Updated: 2026-07-18
+Last updated by: Test 4 checkpoint
+
+Only treat routes as confirmed when supported by captured game output or
+direct travel. Keep inferred destinations explicitly unconfirmed.
 
 ## Movement Commands
 
@@ -11,65 +15,190 @@ Updated: 2026-07-18
 - `up` (`u`)
 - `down` (`d`)
 
-A movement command can fail when the current room has no exit in that direction. A failed `up` command does not mean that `up` is invalid everywhere.
-
-## Bakery
-
-Last visited: 2026-07-18
-Status: Confirmed
-
-Description: A small bakery selling bread, danishes, and other food.
-
-### Exits
-
-| Direction | Destination | Status |
-|---|---|---|
-| south | Main Street | Confirmed |
-
-### NPCs
-
-- Baker
-- Cityguard
-- Janitor
-
-### Services
-
-- Food shop operated by the baker.
-- Use `list` to display the menu.
-- The captured menu is stored in `data/mud_bakery.txt`.
-
-## Main Street
-
-Last visited: 2026-07-18
-Status: Confirmed
-
-Description: A main road through the City of Midgaard.
-
-### Exits
-
-| Direction | Destination | Status |
-|---|---|---|
-| north | Bakery | Confirmed by travel |
-| east | Market Square | Confirmed by travel |
-| south | Armory Entrance | Reported; not confirmed by travel |
-| west | Unknown | Exit observed; destination not recorded |
+A direction can fail when the current room has no matching exit. The transcript
+does not prove that commands are case-insensitive.
 
 ## Market Square
 
-Last visited: 2026-07-18
 Status: Confirmed
 
-### Exits
+Features:
+
+- A cityguard was observed.
+- Four exits were shown: north, east, south, and west.
 
 | Direction | Destination | Status |
 |---|---|---|
-| north | Unknown | Exit observed |
-| east | Unknown | Exit observed |
-| south | Unknown | Exit observed |
-| west | Main Street | Confirmed by travel |
+| north | Temple Square | Confirmed by travel |
+| east | Main Street, eastern side | Confirmed by travel |
+| south | Common Square | Confirmed by travel |
+| west | Main Street, western side | Confirmed by travel |
 
-## Unconfirmed Knowledge
+## Main Street, Western Side
 
-- The destinations north, east, and south of Market Square still need to be explored.
-- The destination west of Main Street still needs to be confirmed.
-- Do not infer reverse exits unless they have been observed in the game.
+Status: Confirmed; exact repeated-room segment names were not captured
+
+| Direction | Destination | Status |
+|---|---|---|
+| north | Bakery | Confirmed in an earlier test |
+| east | Market Square | Confirmed by travel |
+| south | Armory | Confirmed by travel |
+| west | Unknown Main Street segment | Unconfirmed |
+
+## Bakery
+
+Status: Confirmed
+
+- South returns to Main Street.
+- NPCs observed previously: baker, cityguard, and janitor.
+- Use `list` to display the food menu.
+- The captured menu is stored in `data/mud_bakery.txt`.
+
+## Armory
+
+Status: Confirmed
+
+- North returns to Main Street.
+- No other exits were shown.
+- An armorer sells armor.
+- The wall note describes shop commands and policies, including `list`; it did
+  not provide a training clue.
+
+## Main Street, Eastern Side
+
+Status: Confirmed; composed of multiple connected Main Street rooms
+
+### Shop Segment
+
+| Direction | Destination | Status |
+|---|---|---|
+| north | General Store | Described; not entered in this transcript |
+| east | Main Street near the east gate | Confirmed by travel |
+| south | Pet Shop | Described; not entered in this transcript |
+| west | Market Square | Confirmed by travel |
+
+### Guild and East-Gate Segment
+
+| Direction | Destination | Status |
+|---|---|---|
+| north | Weapon shop | Described; not entered in this transcript |
+| east | Inside the East Gate | Confirmed by travel |
+| south | Guild of Swordsmen | Confirmed during Test 3 |
+| west | Shop segment / Market Square route | Confirmed by travel |
+
+## Guild of Swordsmen
+
+Status: Confirmed during Test 3
+
+- This is Dummy's starting guild as a Sentress.
+- The entrance is south from the eastern Main Street guild segment.
+- The guild contains an entrance hall, bar, and tournament/practice yard.
+- A guildmaster was observed in the practice yard.
+- A downward route from the practice yard was observed but not explored.
+
+## Inside the East Gate
+
+Status: Confirmed
+
+- West returns to the eastern Main Street guild segment.
+- South leads to the Water Shop.
+- The eastward gate reported that it was closed when attempted.
+- Multiple cityguards and a Peacekeeper were observed around the gate area.
+
+## Water Shop
+
+Status: Confirmed
+
+- North returns to the east-gate area.
+- It behaved as a dead end; westward movement failed.
+- Wally the Watermaster, a janitor, and an oozing green gelatinous blob were
+  observed.
+- Asking Wally about training produced no useful response.
+
+## Common Square
+
+Status: Confirmed
+
+- Three beastly fidos were observed during Test 4.
+
+| Direction | Destination | Status |
+|---|---|---|
+| north | Market Square | Confirmed by travel |
+| east | Dark Alley | Confirmed by travel |
+| south | The Dump | Confirmed by travel |
+| west | Eastern end of Poor Alley | Confirmed by travel |
+
+## Dark Alley
+
+Status: Confirmed
+
+- Several mercenaries were observed.
+- West returns to Common Square.
+- South was described as leading to the Guild of Thieves.
+- East continues farther through the alley; the destination remains
+  unconfirmed.
+
+## The Dump
+
+Status: Confirmed
+
+- North returns to Common Square.
+- Down leads into the sewer system.
+- The room contains garbage and a large pipe junction; no NPC was observed in
+  the captured output.
+
+## Quadruple Junction Under the Dump
+
+Status: Confirmed
+
+- Exits shown: north, east, south, west, and up.
+- Up returns to The Dump.
+- East leads to The Pit.
+- South leads to A Triple Junction.
+- The north and west destinations were not confirmed.
+
+## The Pit
+
+Status: Confirmed
+
+- West returns to the quadruple junction.
+- Down leads deeper; its destination was not explored.
+
+## A Triple Junction
+
+Status: Confirmed
+
+- Exits shown: north, east, and west.
+- North returns to the quadruple junction.
+- The east and west destinations were not confirmed.
+
+## Poor Alley Area
+
+Status: Partially confirmed
+
+- The eastern end is west of Common Square.
+- A Peacekeeper was encountered at the eastern end.
+- A farther-west room showed east and west exits and contained a Peacekeeper
+  and a beggar.
+- The Grubby Inn was reached while fleeing; a beggar and Filthy were observed.
+- Do not infer a fixed route to the Grubby Inn from a random `flee` result.
+
+## Western City-Wall Room
+
+Status: Room contents confirmed; exact title unconfirmed
+
+- Exits shown: north, east, and south.
+- An oozing green gelatinous blob was present.
+- The wall is made of mortared gray rocks and is too high to climb.
+- East is expected to return toward Poor Alley, but this reverse route was not
+  captured directly.
+- Do not call this room `Wall Road` unless a future `look` captures that exact
+  title.
+
+## Unresolved Test 4 Objectives
+
+- The Newbie Training area has not been located.
+- The Massive Minotaur has not been found or defeated.
+- The western city-wall room's north and south exits remain unexplored.
+- Sewer branches north and west of the quadruple junction remain unexplored.
+- The route below The Pit remains unexplored.

@@ -25,8 +25,12 @@ Connect to the MUD, log in, explore, complete tasks, and report results.
 
 1. Follow instructions precisely.
 2. Execute commands when appropriate (e.g., buying items, fighting).
-3. Log progress to `data/player.md` and `data/world.md`.
-4. Report completion when the objective is met.
+3. Write confirmed state changes and discoveries to memory as they occur; do
+   not wait until the end of a long objective.
+4. If the task requires a report, create it with an in-progress status before
+   starting and update it after major milestones.
+5. Complete only the currently selected objective, persist its final state,
+   and return control to the user before beginning another objective.
 
 ## Error Recovery
 
@@ -73,32 +77,42 @@ Before reporting success, verify:
 - All required output files exist and contain the expected information.
 - No errors occurred during execution.
 
-# Data Logging
+# Memory Checkpoints
 
-Append to `data/player.md`:
+At the start of an objective:
 
-```markdown
-## Progress Log - [YYYY-MM-DD]
+1. Read `data/player.md` and `data/world.md`.
+2. Treat saved state as context that may need live confirmation.
+3. Record the current objective and its in-progress status.
 
-### Objective: [Objective Name]
-Status: Completed / In Progress / Failed
-Progress: [What was done]
-Notes: [Key findings, discoveries, issues encountered]
-```
+During an objective:
 
-Append to `data/world.md` when discovering new locations or items:
+- Update `data/player.md` in place when location, vitals, inventory, equipment,
+  currency, status effects, or objective state changes.
+- Merge confirmed rooms, exits, NPCs, items, services, hazards, and routes into
+  canonical entries in `data/world.md`.
+- Mark uncertain facts as unconfirmed and replace stale facts instead of
+  appending contradictory copies.
+- Count MUD commands and persist a checkpoint after no more than four commands.
+  Update both memory files and the current report, read back the changed
+  sections, then reset the counter. Do not count shell or file operations.
+- Checkpoint immediately instead of waiting for command four after discoveries,
+  player-state changes, combat, purchases, training, objective milestones,
+  connection changes, death, or before risky actions.
+- Base persisted facts on captured game output. Do not reconstruct memory from
+  recalled chat history or inferred room names.
+- Do not rely on a final bulk write.
 
-```markdown
-## World Log - [YYYY-MM-DD]
+Before returning control to the user:
 
-### New Location Discovered
-Location: [Name] at [Coordinates if known]
-Description: [What you learned about it]
-
-### Item Found
-Item: [Name] (ID: XXXXX)
-Location: [Where found]
-```
+1. Save the latest player state and recommended next action.
+2. Save all new confirmed world knowledge.
+3. Add an objective or test marker to both memory files so the checkpoint can
+   be audited.
+4. Finish the selected objective's report, if required, and list the exact
+   memory changes it made.
+5. Verify that the memory and report files exist and contain the latest state.
+6. Never store credentials in memory or reports.
 
 # Helper Scripts
 

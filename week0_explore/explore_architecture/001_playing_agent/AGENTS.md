@@ -20,9 +20,56 @@ The player credentials are:
   - Password: "helloworld"
 
 ## Memory
-Use the `data/player.md` and `data/world.md` to update the work state each loop.
+Read `data/player.md` and `data/world.md` before starting each test. Update them
+using this checkpoint cadence:
+
+1. Count commands sent to the MUD, not shell commands or file operations.
+2. After at most four MUD commands since the previous checkpoint, pause and
+   update `data/player.md`, `data/world.md`, and the current test report.
+3. Write an immediate checkpoint before the four-command limit when any of
+   these occurs:
+   - a new room, exit, NPC, item, shop, hazard, or route is confirmed;
+   - location, vitals, inventory, equipment, currency, level, or status changes;
+   - combat starts or ends, an enemy is defeated, or the character dies;
+   - a purchase, training action, objective milestone, login, logout, or
+     connection loss occurs;
+   - the next action is risky or difficult to reverse.
+4. Reset the command counter to zero after each successful checkpoint.
+5. Read back the changed memory sections to verify the write before resuming.
+
+Do not postpone all memory writes until the end of a test. Before returning
+control to the user, record the latest player state, confirmed world knowledge,
+current objective, and next recommended action.
+
 Use /tmp to store any temporary files while experimenting.
 Store any generated code in the `data/code` directory for later reuse.
+
+## Test Execution Protocol
+
+1. Execute only one top-level `Test N` section per user turn.
+2. At the start of the test, create or update its required completion report
+   with `Status: In Progress`. Preserve useful evidence from an interrupted
+   attempt.
+3. Update the report after major milestones so a token limit or interruption
+   does not erase the experiment's progress.
+4. Before declaring the test complete or blocked:
+   - update `data/player.md` with the current player state;
+   - merge new confirmed discoveries into `data/world.md`;
+   - record `Last completed test: Test N` in `data/player.md` and a matching
+     `Last updated by: Test N` marker in `data/world.md`;
+   - finish the test's completion report with evidence and a pass/fail result;
+   - add a `Memory changes` section to the report listing the exact player and
+     world facts written during the test;
+   - verify that all three files were actually written and contain those
+     markers before asking to continue.
+5. Stop after that test. Do not begin another test in the same turn.
+6. Ask the user whether to continue. Interpret replies as follows:
+   - `yes`: run the next numerically defined test;
+   - `test N`: run the specified test;
+   - `retry`: retry the current test using its saved state and report;
+   - `quit`: stop without starting another test.
+7. If a test is blocked, document the blocker and ask whether to retry, select
+   another test, or quit.
 
 ## Goals
 
