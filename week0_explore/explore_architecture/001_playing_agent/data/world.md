@@ -1,20 +1,75 @@
-## World Knowledge: City of Midgaard
+# World Knowledge: City of Midgaard
 
-Locations discovered so far:
-1. Bakery - Small bakery with danish, bread, etc. (North from Main Street). Exits: South.
-2. Main Street - Passes through the city. Exits: North (to Bakery), South (to Armory Entrance), East (Market Square), West (Main Street? or maybe just other parts of it; 'w' worked and went to Market Square in my exploration, but description says East is market square... wait.
+Updated: 2026-07-18
 
-Correction on World Exploration logs:
-- I was in Bakery. Went South -> Main Street.
-- From Main Street, `[ Exits: n e s w ]`.
-- I typed 'e' (East) and entered the Market Square.
-- From Market Square, `[ Exits: n e s w ]`. 
-  - 'w' went to Main Street.
-  
-Note on Directionality:
-The room description for Main Street says "East of here is the market square". And typing 'e' took me to Market Square. This is consistent.
+## Movement Commands
 
-Entities/NPCs found:
-- The baker (in Bakery)
-- A cityguard (in Bakery)
-- A janitor (walking around Bakery)
+- `north` (`n`)
+- `south` (`s`)
+- `east` (`e`)
+- `west` (`w`)
+- `up` (`u`)
+- `down` (`d`)
+
+A movement command can fail when the current room has no exit in that direction. A failed `up` command does not mean that `up` is invalid everywhere.
+
+## Bakery
+
+Last visited: 2026-07-18
+Status: Confirmed
+
+Description: A small bakery selling bread, danishes, and other food.
+
+### Exits
+
+| Direction | Destination | Status |
+|---|---|---|
+| south | Main Street | Confirmed |
+
+### NPCs
+
+- Baker
+- Cityguard
+- Janitor
+
+### Services
+
+- Food shop operated by the baker.
+- Use `list` to display the menu.
+- The captured menu is stored in `data/mud_bakery.txt`.
+
+## Main Street
+
+Last visited: 2026-07-18
+Status: Confirmed
+
+Description: A main road through the City of Midgaard.
+
+### Exits
+
+| Direction | Destination | Status |
+|---|---|---|
+| north | Bakery | Confirmed by travel |
+| east | Market Square | Confirmed by travel |
+| south | Armory Entrance | Reported; not confirmed by travel |
+| west | Unknown | Exit observed; destination not recorded |
+
+## Market Square
+
+Last visited: 2026-07-18
+Status: Confirmed
+
+### Exits
+
+| Direction | Destination | Status |
+|---|---|---|
+| north | Unknown | Exit observed |
+| east | Unknown | Exit observed |
+| south | Unknown | Exit observed |
+| west | Main Street | Confirmed by travel |
+
+## Unconfirmed Knowledge
+
+- The destinations north, east, and south of Market Square still need to be explored.
+- The destination west of Main Street still needs to be confirmed.
+- Do not infer reverse exits unless they have been observed in the game.

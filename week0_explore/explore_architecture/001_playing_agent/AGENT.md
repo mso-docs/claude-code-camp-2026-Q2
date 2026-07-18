@@ -26,8 +26,32 @@ Store any generated code in the `data/code` directory for later reuse.
 
 ## Goals
 
+## Test 1: 
 For this test:
 1. Log into the MUD as the proper player.
 2. Determine the commands to move around the world via directions - north, south, east, west, up, down.
 3. Explore the town and find the bakery.
 4. List the menu at the bakery.  Store the menu in `data/mud_bakery.txt`.
+
+## Test 2:
+For this test:
+1. Log into the MUD as the proper player.
+2. Determine the commands to move around the world via directions - north, south, east, west, up, down.
+3. Explore the town and practice the `kick` skill.
+4. Generate a completion report in `002_agent_skills/completion-report` based on what you accomplished. Name the file `qwen3.6-test2-completion.md`.
+
+
+## Test 3:
+For this test:
+1. Log into the MUD as the proper player.
+2. Determine the commands to move around the world via directions - north, south, east, west, up, down.
+3. Explore the town and locate the starting guild for your player's class.
+4. Generate a completion report in `002_agent_skills/completion-report` based on what you accomplished. Name the file `qwen3.6-test3-completion.md`.
+
+## Test 4:
+For this test:
+1. Log into the MUD as the proper player.
+2. Determine the commands to move around the world via directions - north, south, east, west, up, down.
+3. Explore the town and locate the Newbie Training area.
+4. Find and defeat the Massive Minotaur. Since this is a large goal, break it into tasks. For example, if you need to complete training or preparations before this fight, do so. Use your best judgement and autonomously execute this task.
+5. Generate a completion report in `002_agent_skills/completion-report` based on what you accomplished. Name the file `qwen3.6-test4-completion.md`.
