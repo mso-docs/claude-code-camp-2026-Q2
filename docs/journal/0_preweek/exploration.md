@@ -1,5 +1,8 @@
 # Expedition Journal: Dummy's Accidental Sewer Crawl
 
+This is my map based on the dungeon I fell into. I went to my guild to practice `kick` and I ended up falling into the sewer and getting stuck there for about 1.5 hours. I had to make this map to understand where I was, as I was going in circles for a long time. I ended up getting to level 3 after fighting tons of spiders, bats, and rats.
+
+Here is my map:
 ```txt
 # Dummy's Midgaard Sewer Expedition
 
@@ -150,6 +153,10 @@
                          |
                     Market Square
 ```
+
+## AI Agent's Map of Midgaard
+
+Codex 5.6 Sol created a map of Midgaard, which I thought was interesting. I've left it here:
 ```txt
                                                     [Common Square]
                                                           ^
@@ -361,3 +368,5 @@ This accidental detour taught far more than the intended tutorial:
 - Discovering alternate entrances and exits to the same dungeon
 
 Although the tutorial expected me to buy a dagger first, exploring the sewer became the most memorable part of the adventure and provided a much deeper understanding of how MUDs are designed.
+
+---
