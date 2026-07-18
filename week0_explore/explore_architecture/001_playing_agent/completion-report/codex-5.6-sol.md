@@ -4,7 +4,7 @@
 
 **Status: Completed successfully**
 
-Codex 5.6 Sol completed every goal in `AGENT.md` using one persistent interactive connection to the local tbaMUD server.
+Codex 5.6 Sol completed every goal in `AGENTS.md` using one persistent interactive connection to the local tbaMUD server.
 
 ## Goals Completed
 

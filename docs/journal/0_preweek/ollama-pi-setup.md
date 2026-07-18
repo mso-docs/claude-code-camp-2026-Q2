@@ -69,7 +69,7 @@ Review the generated instructions, safety constraints, and shell commands before
 Pi automatically discovers `AGENTS.md` (plural) in the working directory. Store the reusable MUD rules, memory behavior, and safety constraints in:
 
 ```text
-week0_explore/explore_architecture/01_plain_agent/AGENTS.md
+week0_explore/explore_architecture/001_playing_agent/AGENTS.md
 ```
 
 Do not place passwords in that committed file. Put the task that should begin immediately in `START.md`, for example:

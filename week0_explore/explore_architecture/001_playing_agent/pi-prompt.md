@@ -1,17 +1,26 @@
-Read `./AGENT.md` and `../002_agent_skills/play-mud/SKILL.md` completely. Treat
-`AGENT.md` as the task definition and use the generated `play-mud` skill as the
+Read `./AGENTS.md` and `../002_agent_skills/play-mud/SKILL.md` completely. Treat
+`AGENTS.md` as the task definition and use the generated `play-mud` skill as the
 operating workflow.
 
-This run evaluates goals 2 through 4 from `AGENT.md`:
+Execute the three top-level sections `Test 2`, `Test 3`, and `Test 4` in that
+order. Do not execute `Test 1`. The numbered items inside each test are steps
+belonging to that test; they are not separate test numbers.
 
-2. Identify the commands for moving north, south, east, west, up, and down.
-3. Explore the live MUD and find the bakery.
-4. Run the bakery's menu command and save the current menu to
-   `data/mud_bakery.txt`.
+- Test 2: practice the `kick` skill, then write
+  `../002_agent_skills/completion-report/qwen3.6-test2-completion.md`.
+- Test 3: locate the starting guild for the player's class, then write
+  `../002_agent_skills/completion-report/qwen3.6-test3-completion.md`.
+- Test 4: locate the Newbie Training area and defeat the Massive Minotaur, then
+  write
+  `../002_agent_skills/completion-report/qwen3.6-test4-completion.md`.
 
-Logging in is a prerequisite for the evaluation. You have permission to
-connect only to the MUD at `localhost:4000` using the credentials supplied in
-`AGENT.md`.
+Create `../002_agent_skills/completion-report` if it does not exist. Produce
+three separate reports with exactly the filenames above; do not combine the
+tests into one report.
+
+Logging in and confirming the movement commands are required steps within each
+test. You have permission to connect only to the MUD at `localhost:4000` using
+the credentials supplied in `AGENTS.md`.
 
 Verify each goal through live interaction with the MUD. Existing player,
 world, menu, helper-script, and completion-report files are prior-run evidence,
@@ -24,15 +33,13 @@ Correct stale facts in place, preserve genuinely new information, and mark
 uncertain destinations as unconfirmed. Do not put credentials in memory,
 scripts, transcripts, or reports.
 
-Create `completion-report/qwen3.6-tests-2-4.md` containing:
+Each completion report must describe the actions taken, evidence observed,
+final player state, failures and recovery attempts, unclear skill instructions,
+and a clear pass/fail result for that test. Finish and save each report before
+starting the next test.
 
-- the connection method, without credentials;
-- the movement commands tested and the evidence for each;
-- the route taken to the bakery;
-- the bakery menu command and output-file path;
-- any failed commands, recovery steps, or skill instructions that were unclear;
-- a final pass/fail result for goals 2, 3, and 4.
-
-Continue using terminal and file tools until all three evaluated goals are
-complete or a concrete blocker prevents progress. Do not merely explain how to
-perform the task, and do not report success based only on existing files.
+Continue using terminal and file tools until Tests 2, 3, and 4 are complete or
+a concrete blocker prevents further progress. If one test is blocked but the
+character remains usable, document the blocker and proceed to the next test.
+Do not merely explain how to perform the tasks, and do not report success based
+only on existing files.
