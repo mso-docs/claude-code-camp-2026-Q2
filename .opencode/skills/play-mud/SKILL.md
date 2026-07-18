@@ -9,11 +9,12 @@ Connect to the MUD, log in, explore, complete tasks, and report results.
 
 ## Connection
 
-1. Check whether a reusable MUD helper or persistent terminal session already exists before starting another connection.
-2. Start `telnet localhost 4000` in a persistent terminal session. Do not use a short idle timeout that could disconnect an active game.
-3. Use `nc localhost 4000` only if `telnet` is unavailable or fails with a concrete connection error. Do not build repeated `nc` pipelines or send the entire login sequence at once.
-4. Read each login prompt before entering the corresponding credential or menu response. Do not hardcode credentials in scripts or committed files.
-5. Confirm successful login from the character prompt or recognizable game output before sending gameplay commands.
+1. Load and follow the `manage-mud-server` skill. Ensure the local service and port 4000 are ready.
+2. Load and follow the `login-mud` skill. Use `data/code/mud-login.sh start` to create or reuse the authenticated persistent session.
+3. Require `MUD_LOGIN_OK` and recognizable room output before sending gameplay commands.
+4. Send gameplay commands through `data/code/mud-login.sh send` so the same socket remains alive.
+5. Fall back to manual `telnet localhost 4000` only after the deterministic tool fails with a concrete error. Use `nc` only if `telnet` is unavailable or fails.
+6. Never build repeated pipelines, submit the entire login sequence at once, or put credentials in scripts, arguments, reports, or memory.
 
 ## Exploration
 

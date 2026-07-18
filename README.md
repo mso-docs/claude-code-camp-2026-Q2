@@ -33,6 +33,7 @@ The main finding was that model capability alone did not determine success. A MU
 - [Preweek journal](docs/journal/0_preweek.md) — summary of the full preweek project and its lessons
 - [Manual exploration](docs/journal/0_preweek/exploration.md) — Dummy's Midgaard sewer expedition, maps, and gameplay discoveries
 - [Ollama and Pi setup](docs/journal/0_preweek/ollama-pi-setup.md) — local model, coding harness, and Agent Skill setup
+- [OpenCode MUD guide](docs/opencode-mud-guide.md) — configure OpenCode, start the MUD evaluator, and run checkpointed tests
 - [Agent results](docs/journal/0_preweek/agent-results.md) — comparison of the initial bakery-task attempts
 - [`001_playing_agent`](week0_explore/explore_architecture/001_playing_agent) — agent instructions, prompts, state files, helper code, and completion reports
 - [`002_agent_skills`](week0_explore/explore_architecture/002_agent_skills) — Agent Skills architecture, reusable skills, and extended Qwen 3.6 test reports
