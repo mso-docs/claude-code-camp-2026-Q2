@@ -40,6 +40,11 @@ Logging in and confirming the movement commands are required steps within each
 test. You have permission to connect only to the MUD at `localhost:4000` using
 the credentials supplied in `AGENTS.md`.
 
+Prefer `telnet localhost 4000` in one persistent terminal session. Use `nc`
+only if `telnet` is unavailable or returns a concrete connection error. Do not
+build repeated `nc` pipelines, send the complete login sequence before prompts
+appear, or keep changing connection methods without new evidence.
+
 Use existing completion-report statuses only to select the next unfinished
 test. Existing player, world, menu, helper-script, and report content provides
 context, but it is not live proof that the newly selected test succeeded.
@@ -50,6 +55,14 @@ MUD and write a checkpoint after no more than four MUD commands. At each
 checkpoint, update `data/player.md`, `data/world.md`, and the current report,
 then read back the changed sections before resetting the counter. Shell and
 file commands do not count as MUD commands.
+
+A checkpoint is complete only after those file writes and the read-back
+verification succeed. When one is due, perform the file operations before
+writing a conversational checkpoint summary or sending another MUD command.
+Do not say that memory will be saved next. After verification, use at most one
+short sentence of narration. If the login flow or exploration has already used
+substantial context, stop gameplay and persist the smallest accurate checkpoint
+immediately.
 
 Do not wait for four commands after discovering a new room, exit, NPC, item,
 shop, hazard, or route; after a player-state change; at the start or end of

@@ -10,10 +10,10 @@ Last completed test: Test 3
 
 ## Last Observed Position Context
 
-Exact room name: Unconfirmed
-Last observed context: A room beside the western city wall with exits north,
-east, and south. An oozing green gelatinous blob was present. Examining the wall
-showed that it is made of mortared gray rocks and is too high to climb.
+Exact room name: West Gate Area (not specifically named in game)
+Last observed context: Walking next to the western city wall. The road continues
+further south and the city gate is just north of here.
+Exits confirmed: north → Inside The West Gate Of Midgaard, south → Wall Road.
 
 Do not label this room `Wall Road` unless a future `look` command captures that
 exact room title.
@@ -39,8 +39,7 @@ exact room title.
 2. Prepare for and defeat the Massive Minotaur.
 3. Maintain the Test 4 report and memory checkpoints while exploring.
 
-Neither the Newbie Training area nor the Massive Minotaur had been found at
-this checkpoint.
+Training confirmed: `practice <skill>` works only in a guild with a guildmaster. Sentress's starting guild is the Guild of Swordsmen (from Test 3). Newbie-specific training area not yet located.
 
 ## Confirmed Commands
 

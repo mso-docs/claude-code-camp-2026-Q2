@@ -183,6 +183,15 @@ Status: Partially confirmed
 - The Grubby Inn was reached while fleeing; a beggar and Filthy were observed.
 - Do not infer a fixed route to the Grubby Inn from a random `flee` result.
 
+## West Gate Area
+
+Status: Confirmed
+
+- Description: "You are walking next to the western city wall. The road continues further south and the city gate is just north of here."
+- Exits:
+  - north → Inside The West Gate Of Midgaard
+  - south → Wall Road
+
 ## Western City-Wall Room
 
 Status: Room contents confirmed; exact title unconfirmed

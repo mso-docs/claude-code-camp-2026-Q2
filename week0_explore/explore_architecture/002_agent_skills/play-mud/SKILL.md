@@ -10,9 +10,10 @@ Connect to the MUD, log in, explore, complete tasks, and report results.
 ## Connection
 
 1. Check whether a reusable MUD helper or persistent terminal session already exists before starting another connection.
-2. Use `nc localhost 4000` or `telnet localhost 4000` in a persistent terminal session. Do not use a short idle timeout that could disconnect an active game.
-3. Read the login prompt and enter credentials supplied at runtime. Do not hardcode credentials in scripts or committed files.
-4. Confirm successful login from the character prompt or recognizable game output before sending gameplay commands.
+2. Start `telnet localhost 4000` in a persistent terminal session. Do not use a short idle timeout that could disconnect an active game.
+3. Use `nc localhost 4000` only if `telnet` is unavailable or fails with a concrete connection error. Do not build repeated `nc` pipelines or send the entire login sequence at once.
+4. Read each login prompt before entering the corresponding credential or menu response. Do not hardcode credentials in scripts or committed files.
+5. Confirm successful login from the character prompt or recognizable game output before sending gameplay commands.
 
 ## Exploration
 
@@ -47,7 +48,7 @@ Report when all objectives are complete or if the user stops. Do not continue in
 
 # Decision Rules
 
-- Use `nc` for faster connections; use `telnet` only if `nc` is unavailable.
+- Prefer `telnet` for login and the persistent gameplay session. Use `nc` only as a fallback after a concrete `telnet` failure.
 - Always confirm login before proceeding.
 - Log progress after each significant step, not just at the end.
 - If a command fails repeatedly, report what you tried and why it failed.
@@ -96,6 +97,12 @@ During an objective:
 - Count MUD commands and persist a checkpoint after no more than four commands.
   Update both memory files and the current report, read back the changed
   sections, then reset the counter. Do not count shell or file operations.
+- Treat a checkpoint as file operations, not narration. When one is due, write
+  and verify all three files before summarizing the discovery or sending another
+  MUD command. Never say that the checkpoint will be written next.
+- Keep post-checkpoint narration to one short sentence. If login attempts or
+  exploration have consumed substantial context, stop gameplay and persist the
+  smallest accurate checkpoint immediately.
 - Checkpoint immediately instead of waiting for command four after discoveries,
   player-state changes, combat, purchases, training, objective milestones,
   connection changes, death, or before risky actions.
