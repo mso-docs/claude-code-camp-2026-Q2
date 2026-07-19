@@ -11,7 +11,7 @@
 
 ## Required Test 2 Interpretation
 
-Test 2 requires guild training, not combat practice. The player must reach the
+Test 2 requires **guild training**, not combat practice. The player must reach the
 **Tournament and Practice Yard** inside Dummy's **Guild of Swordsmen**, confirm
 the guildmaster is present, and issue:
 
@@ -19,19 +19,27 @@ the guildmaster is present, and issue:
 practice kick
 ```
 
-Confirmed navigation lead from the Temple:
+Conf navigation lead from the Temple of Midgaard (must verify each room):
 
-```text
-s, s, e, e, s, e, s
+```
+s → Temple Square
+s → Market Square
+e → Main Street (eastern)
+e → Main Street (guild segment)
+s → Entrance Hall
+e → Bar of Swordsmen
+s → Tournament and Practice Yard
 ```
 
 Confirm every room and exit from current MUD output because the player may not
-start at the Temple. `kick <npc>` attacks an NPC and does not satisfy this test.
+start at the Temple. `kick <npc>` attacks an NPC and does **not** satisfy this test.
 If the guildmaster refuses training, preserve the response and mark the step
 BLOCKED or FAILED rather than substituting combat.
 
-## Log
+## Progress Log
 
-### [Update 1] Report initialized; proceeding to server readiness and login.
+### Step: Environment setup & login
+- **Status:** In Progress
+- **Next action:** Check server readiness, establish MUD session, and begin navigation.
 
-Next action: verify `localhost:4000` is accepting connections via `manage-mud-server`, then establish a persistent MUD session with `login-mud`.
+---

@@ -30,14 +30,16 @@ Do not label the current room "Temple Square" — that is a different room reach
 
 ## Current Objective
 
-1. Obtain gold to pay direction tolls (current blocker).
-2. Explore the Reading Room (west exit from Temple of Midgaard) for Newbie Training area.
-3. Find and defeat the Massive Minotaur in or near the Newbie Training area.
+### NEW STRATEGY (from player guidance):
+1. Leave temple area, fight monsters in sewers or fields outside temple grounds to earn gold.
+2. Use `kill <target>` or `kick <target>` to engage enemies; wait for them to attack if they initiate.
+3. After defeating — `get all from corpse` or `get gold` to loot body (gold may require separate pickup).
+4. Return to city, `deposit [amount] into atm` to accumulate savings.
+5. Use earned gold to pay direction tolls and unlock donation gate to explore further.
 
-Blockers:
-- "You're broke!" — direction-based movement fails without gold in TBA MUD.
-- "You don't have a donation" — Donation Room east exit requires a donation first (standard CircleMUD temple gatekeeper).
-- Hunger/thirst persistent states; effect on NPC interaction is unclear but noted.
+### Alternate paths still available:
+- Attempt `donate [gold_coins]` in Donation Room alcove (east from temple hall) — may open eastward passage.
+- Explore Reading Room (west exit) once mobile for Newbie Training area clues.
 
 ## New Discoveries from Test 4 Exploration (not yet verified at end of test)
 

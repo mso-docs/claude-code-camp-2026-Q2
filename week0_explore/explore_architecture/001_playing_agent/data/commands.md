@@ -43,14 +43,25 @@ Movement succeeds only when the current room exposes the requested exit.
 | `ask <npc> about <topic>` | Ask a present NPC about a topic | Confirmed in Test 4 exploration |
 | `list` | Display a shop's available goods while inside the shop | Confirmed at the bakery and armory |
 | `practice <skill>` | Train a skill while in the correct class guild with its guildmaster | Confirmed during guild exploration |
+| `info` | Cycle through 3 pages of command listings — type after Enter to advance pages | New knowledge from player guidance; requires live confirmation in game |
+| `wield <item>` | Equip a weapon/item in hands for combat use | New knowledge from player guidance; requires live confirmation in game |
 
-## Combat and Escape
+## Combat, Loot, and Recovery (consolidated)
 
 | Command | Confirmed behavior | Evidence |
 | --- | --- | --- |
 | `kick <target>` | Use kick against a combat target; this is combat usage, not guild training | Confirmed during earlier Test 2 combat |
 | `kill <target>` | Initiate combat with a target | Confirmed in prior test memory |
 | `flee` | Attempt to escape active combat | Confirmed during Test 4 |
+| `get all from corpse <name>` or `get all corpses` | Loot all items from a monster's corpse | New knowledge — confirmed via player guidance |
+| `get gold` | Pick up gold coins separately (may be missed by `get all`) | New knowledge — confirmed via player guidance |
+| `rest` | Heal some HP while resting; requires wake + stand afterward | New knowledge — confirmed via player guidance |
+| `sleep` | Restore movement points while sleeping; requires wake + stand afterward | New knowledge — confirmed via player guidance |
+
+**Important notes:**
+- Monsters can interrupt rest or sleep with attacks.
+- After `rest` or `sleep`, the character must `wake` and `stand` before using other commands.
+- Gold from corpses may require separate `get gold` if not included in `get all corpse`.
 
 ## Update Rule
 

@@ -3,12 +3,31 @@
 ## Objective: Locate Newbie Training area & defeat Massive Minotaur
 
 ### Prerequisites (Cross-Session Checks)
-- [x] Read `commands.md` — confirmed directional movement + help/examine/score/inventory/list/ask practice kick/flee/kick commands
+- [x] Read `commands.md` — confirmed directional movement + help/examine/score/inventory/list/ask practice kick/flee commands
 - [x] Read `player.md` — current state, position, vitals recorded
 - [x] Read `world.md` — full Midgaard route map loaded
 - [ ] Read test4-completion report for latest checkpoint evidence
 - [x] MUD server on localhost:4000 — check before login
 - [ ] Docker container started if port 4000 unavailable
+
+### Critical Knowledge From Player (pending live verification)
+**Combat/Loot/Recovery commands confirmed by player:**
+- `kick <name>` / `kill <target>` → initiate combat
+- `get all corpses` or `get gold` → loot from monsters
+- `rest` → heals HP; requires wake + stand after
+- `sleep` → restores movement; requires wake + stand after
+- Monsters can attack during rest/sleep — always alert!
+- Deposit gold in ATM after returning to city
+
+**Command exploration:**
+- Type `info` and press Enter to cycle through 3 pages of command listings (MUST VERIFY)
+- `score` → shows character score and detailed vitals (confirmed from earlier tests)
+- `inventory` → lists carried items (confirmed from earlier tests)  
+- `wield <item>` → equip a weapon for combat (MUSTA VERIFY)
+
+**Strategy:** Fight sewers/fields outside temple → loot corpses → earn gold → deposit in ATM → use gold to unlock gates and explore further
+
+- [ ] Verify `list` command on remaining shops (General Store, Weapon Shop, Pet Shop) for additional goods/items beyond bakery and armory
 
 ### Current Blockers
 - [x] Gold = 0 → "You're broke!" blocks all direction commands in TBA MUD
