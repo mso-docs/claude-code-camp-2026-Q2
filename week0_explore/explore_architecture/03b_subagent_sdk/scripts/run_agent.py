@@ -14,6 +14,9 @@ from claude_agent_sdk import (
     ClaudeAgentOptions,
     ResultMessage,
     TextBlock,
+    ToolResultBlock,
+    ToolUseBlock,
+    UserMessage,
     query,
 )
 from dotenv import load_dotenv
@@ -131,11 +134,17 @@ async def run_player(
             options=build_player_options(agent, server_name, server),
         ):
             if isinstance(message, AssistantMessage):
-                output.extend(
-                    block.text
-                    for block in message.content
-                    if isinstance(block, TextBlock)
-                )
+                for block in message.content:
+                    if isinstance(block, TextBlock):
+                        output.append(block.text)
+                        print(f"[{name}] {block.text}", flush=True)
+                    elif isinstance(block, ToolUseBlock):
+                        print(f"[{name}] -> {block.name}({block.input})", flush=True)
+            elif isinstance(message, UserMessage) and isinstance(message.content, list):
+                for block in message.content:
+                    if isinstance(block, ToolResultBlock):
+                        status = "error" if block.is_error else "ok"
+                        print(f"[{name}] <- {status}: {block.content}", flush=True)
             elif isinstance(message, ResultMessage) and message.is_error:
                 error = str(message.result or message.subtype)
     except Exception as exc:

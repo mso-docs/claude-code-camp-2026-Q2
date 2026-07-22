@@ -1,17 +1,38 @@
 # Smarty Player State
 
 ## Basic Info
-- **Name:** smarty (login name); NOTE: server 'score' rank line reads "This
-  ranks you as Dummy the Believer (level 1)" - "Dummy" not "Smarty". Unresolved
-  discrepancy, recorded verbatim, not fabricated/resolved. Room self-listing
-  shows "Smarty the Apprentice of Magic is standing here."
+- **Name:** smarty (login name / tool label). NOTE: this session's own live
+  `score` output AND live `save` output both consistently name the character
+  "Dummy" instead of "Smarty" - reproduced across 4+ separate command calls
+  in different reconnect cycles ("This ranks you as Dummy the Believer
+  (level 1)." and "Saving Dummy."). This is NOT a one-off lag glitch (it is
+  fully reproducible and appears on the authoritative `save` confirmation
+  too). Room self-listing (per the primary/world.md) shows "Smarty the
+  Apprentice of Magic is standing here." Recorded verbatim as an unresolved
+  session/character-identity discrepancy - not fabricated or resolved by
+  inference. Whichever name is authoritative, all stats below were captured
+  live from the "smarty" tool session.
 - **Age:** 17 years old (live, via `score`: "You are 17 years old.")
-- **Gender:** NOT YET OBSERVED - no server output has revealed gender.
+- **Gender:** Not directly observed from this character's own session (no
+  stock command in this build prints own gender). Indirect live evidence:
+  primary character's live `look smarty` in the shared room returned "You
+  see nothing special about him." (male pronoun) - recorded in data/world.md
+  from the primary's session while both characters were simultaneously live
+  in the Temple of Midgaard. Recorded as cross-session live evidence, not
+  fabricated, but flagged as indirect (obtained via the other character,
+  not this one).
 - **Class:** NOT FULLY CONFIRMED. Room sdesc title "Apprentice of Magic"
   (standard CircleMUD level-1 Magic User title) vs score rank line "the
-  Believer" (standard CircleMUD level-1 Cleric title) conflict. Live evidence
-  is contradictory; do not infer - needs further live confirmation (e.g. a
-  class-specific command or spellbook/prayer check).
+  Believer" (standard CircleMUD level-1 Cleric title) conflict. Reconfirmed
+  verbatim across 3 separate live `score` calls in different sessions ("This
+  ranks you as Dummy the Believer (level 1)") - not a one-off lag glitch.
+  Additional live evidence via `practice`: "You have 3 practice sessions
+  remaining. You know of the following spells: armor (not learned), cure
+  light (not learned)." Both spells listed are consistent with a Cleric
+  spell list in stock CircleMUD, leaning toward Cleric/"Believer", but this
+  still conflicts with the room sdesc "Apprentice of Magic". Live evidence
+  is contradictory; do not infer further - recorded verbatim as an unresolved
+  discrepancy.
 - **Level:** 1 (live, via `score`: "(level 1)")
 - **Race:** NOT YET OBSERVED
 
@@ -45,15 +66,26 @@
   (str/int/wis/dex/con/cha) are not printed by plain `score` in this build.
 
 ## Equipment
-- **Worn:** NOT YET CAPTURED - `equipment` command was sent but tool output
-  lag/reconnect meant only stale `score` text was returned; a disconnect then
-  occurred before the real response arrived. Retry needed next session.
-- **Held:** NOT YET CAPTURED
+- **Worn (live, via `equipment`, "You are using:"):**
+  - used as light: a candle
+  - worn on finger: a leather ring (x2)
+  - worn around neck: a leather gorget (x2)
+  - worn on body: a breast plate
+  - worn on head: a leather cap
+  - worn on legs: a pair of bronze leggings
+  - worn on feet: a pair of leather boots
+  - worn on hands: a pair of leather gloves
+  - worn on arms: a pair of leather sleeves
+  - worn as shield: a shield
+  - worn about body: a brown leather cape
+  - worn about waist: an old leather belt
+  - worn around wrist: a leather wristguard (x2)
+  - wielded: a small sword
+  - held: a metal staff
 
 ## Inventory
-- **Carried Items:** NOT YET CAPTURED - `inventory` command triggered
-  "MUD_LOGIN_ERROR: server closed the connection" before any output was
-  captured. Retry needed next session.
+- **Carried Items:** Nothing (live, via `inventory`: "You are carrying:
+  Nothing.")
 
 ## Currency
 - **Gold:** 0 gold coins (live, via `score`)
