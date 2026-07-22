@@ -56,4 +56,14 @@ Smarty's age/gender/class/stats while both sessions are active.
   numerically identical to Dummy's own score (17yo, 16H/100M/83V, AC 39/10,
   1 exp, level 1, rank line "Dummy the Believer") - an unresolved
   name/identity quirk of this sandbox, recorded as observed, not resolved.
+- `wave smarty` -> "You wave to Smarty." Confirmed live joint interaction
+  while both Dummy and Smarty sessions were active in the same room.
+- `save` issued after the wave; the server's delayed response (surfaced on
+  the next command) was the explicit confirmation "Saving Dummy." - final
+  save live-confirmed for this character. Character remained at full/normal
+  health (16H 100M 83V) throughout - no death occurred.
+- Connection dropped several times mid-session ("server closed the
+  connection", "can't find pane") between commands; each time a fresh
+  `mcp__mud__start` call reconnected to the same authenticated session and
+  same room/state without any apparent data loss.
 

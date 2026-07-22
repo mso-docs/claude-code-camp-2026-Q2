@@ -22,6 +22,10 @@
   Magic User class, but Smarty's own `score` rank line reportedly read
   "Dummy the Believer" - an unresolved naming quirk, see data/player.md and
   data/smarty/player.md for both sides' raw evidence.
+- Confirmed joint interaction: Dummy issued `wave smarty` and received
+  "You wave to Smarty." while both the primary and Smarty sessions were
+  live in the same room - satisfies the shared-activity/rendezvous
+  requirement for this run.
 
 ## Items
 *(empty - populate as items are confirmed)*

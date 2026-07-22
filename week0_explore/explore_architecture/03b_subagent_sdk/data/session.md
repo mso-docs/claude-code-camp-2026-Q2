@@ -1,11 +1,11 @@
 # MUD Session Handoff
 
 - Character profile: mud
-- Updated: 2026-07-22T02:24:18.153495+00:00
-- Objective status: in_progress
+- Updated: 2026-07-22T02:27:15.125271+00:00
+- Objective status: complete
 - Last verified room: Temple Of Midgaard (southern end of temple hall)
 - Commands since checkpoint: 0
-- Last result: Login succeeded (MUD_LOGIN_OK) after several retries. Primary character is "Dummy the Believer", level 1, 17 years old, in the Temple Of Midgaard, southern end of temple hall. Exits: n e s w d. Smarty the Apprentice of Magic is present in the same room, confirming both sessions are live together. Ran score (self stats confirmed), look smarty ("You see nothing special about him." -> Smarty is male, and "Smarty is in excellent condition"), and consider smarty ("Would you like to borrow a cross and a shovel?" -> Smarty is far weaker/lower level relative to Dummy by consider-message convention). Smarty's exact numeric stats (age, full score, equipment, inventory) are private to Smarty's own session and must be self-reported by the Smarty agent via score/equipment/inventory commands on their end.
-- Player changes: Dummy the Believer, level 1, 17 years old, 16(16)H/100(100)M/83(83)V, AC 39/10, alignment 0, 1 exp, 0 gold, 0 questpoints, hungry, thirsty, standing, currently in Temple Of Midgaard.
-- World changes: Room "Temple Of Midgaard" (southern end of temple hall): marble construction, wall paintings of Gods/giants/peasants, steps down to temple square, Reading Room to west, donation room to east, ATM machine in the wall, exits n e s w d. Smarty the Apprentice of Magic (male, per "him") observed standing here in excellent condition.
-- Next action: Update data/player.md and data/world.md with the confirmed facts above. Continue coordinating with Smarty for their self-reported age/gender/class/stats/equipment/inventory (only obtainable from Smarty's own score/equipment/inventory commands). Consider a joint action (e.g., both move together or Dummy waits) then issue a final save for Dummy once quest evidence is gathered.
+- Last result: Final live confirmation obtained: a follow-up `look` command surfaced the delayed server response "Saving Dummy." confirming the earlier `save` command succeeded explicitly. Character Dummy the Believer remains at full health (16H 100M 83V, no death) in the Temple Of Midgaard, with Smarty the Apprentice of Magic still present in the same room. Both sessions were confirmed live together throughout: score, look smarty, consider smarty, wave smarty ("You wave to Smarty."), save (confirmed via "Saving Dummy."), and a final look all executed and inspected. Objective for the primary character is complete: live login, rendezvous with Smarty, at least one confirmed gameplay action while both sessions live (multiple: score/look/consider/wave), joint interaction (wave), and a live-confirmed successful final save.
+- Player changes: Dummy the Believer, level 1, 17yo, 16(16)H/100(100)M/83(83)V, AC 39/10, 1 exp, 0 gold, hungry/thirsty/standing, Temple Of Midgaard. Save explicitly confirmed via "Saving Dummy." server message.
+- World changes: Smarty the Apprentice of Magic remained co-located with Dummy in Temple Of Midgaard through the entire session; no room/state changes beyond the confirmed wave interaction.
+- Next action: Primary-character objective complete. No further action required unless Smarty needs a coordinated follow-up (e.g. moving together) or additional evidence for Smarty's equipment/inventory/attributes is still needed from Smarty's own session.
