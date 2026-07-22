@@ -1,0 +1,13 @@
+{
+  "name": "subagent-sdk-mud-player",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "play": "node scripts/play-mud-sdk.mjs",
+    "check": "node scripts/play-mud-sdk.mjs --check",
+    "test:login": "python3 scripts/test-mud-login.py"
+  },
+  "dependencies": {
+    "@opencode-ai/sdk": "1.18.3"
+  }
+}
