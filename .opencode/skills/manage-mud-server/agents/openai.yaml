@@ -1,0 +1,4 @@
+interface:
+  display_name: "Manage MUD Server"
+  short_description: "Check and start the local MUD safely"
+  default_prompt: "Use $manage-mud-server to ensure the local MUD service is ready."

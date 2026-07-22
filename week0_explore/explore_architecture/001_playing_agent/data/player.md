@@ -5,63 +5,60 @@ Character: Dummy
 Class: Sentress
 Level: 3
 Current test: Test 4
-Test status: In Progress
+Test status: Active - exploring Temple of Midgaard for Newbie Training area
 Last completed test: Test 3
 
 ## Last Observed Position Context
 
-Exact room name: West Gate Area (not specifically named in game)
-Last observed context: Walking next to the western city wall. The road continues
-further south and the city gate is just north of here.
-Exits confirmed: north → Inside The West Gate Of Midgaard, south → Wall Road.
+Exact room name: Temple Of Midgaard (southern end of temple hall)
+Last observed context: In the main temple hall. Giant marble block walls with ancient wall paintings depicting Gods, giants and peasants. Large steps lead down through temple gate to temple square below. To the west is the Reading Room; donation room in a small alcove to the east; automatic teller machine installed in wall.
+Exits confirmed: n (unexplored) / e (Donation Room) / s (down → Temple Square) / w (Reading Room) / d (down → Temple Square)
 
-Do not label this room `Wall Road` unless a future `look` command captures that
-exact room title.
+Do not label the current room "Temple Square" — that is a different room reachable via stairs down from this one.
 
 ## Vitals and Character Details
 
-- Health: 45 / 45
+- Health: 16 at last observed prompt
 - Mana: 100 / 100
-- Movement: 89 / 90 at the last observed prompt
-- Experience: 4,445
-- Experience needed for next level: 3,555
-- Alignment: 470
-- Gold: 0
+- Movement: 82-83 / 90 at last observed prompt
+- Gold: 0 (broke — "You're broke!" blocks movement via direction commands)
 - Quest points: 0
 - Armor class: 39 / 10
 - Age: 17
-- Hunger: Observed during Test 4; current status not rechecked
-- Thirst: Observed during Test 4; current status not rechecked
+- Hunger: Persistent state ("You are hungry.") — present across multiple rooms and sessions; may penalize or block actions
+- Thirst: Persistent state ("You are thirsty.") — present across multiple rooms and sessions; same concern as hunger
 
 ## Current Objective
 
-1. Locate the Newbie Training area.
-2. Prepare for and defeat the Massive Minotaur.
-3. Maintain the Test 4 report and memory checkpoints while exploring.
+### NEW STRATEGY (from player guidance):
+1. Leave temple area, fight monsters in sewers or fields outside temple grounds to earn gold.
+2. Use `kill <target>` or `kick <target>` to engage enemies; wait for them to attack if they initiate.
+3. After defeating — `get all from corpse` or `get gold` to loot body (gold may require separate pickup).
+4. Return to city, `deposit [amount] into atm` to accumulate savings.
+5. Use earned gold to pay direction tolls and unlock donation gate to explore further.
 
-Training confirmed: `practice <skill>` works only in a guild with a guildmaster. Sentress's starting guild is the Guild of Swordsmen (from Test 3). Newbie-specific training area not yet located.
+### Alternate paths still available:
+- Attempt `donate [gold_coins]` in Donation Room alcove (east from temple hall) — may open eastward passage.
+- Explore Reading Room (west exit) once mobile for Newbie Training area clues.
 
-## Confirmed Commands
+## New Discoveries from Test 4 Exploration (not yet verified at end of test)
 
-- Movement: `north`/`n`, `south`/`s`, `east`/`e`, `west`/`w`, `up`/`u`,
-  `down`/`d`
-- Observation: `look`, `examine <target>`, `score`, `inventory`, `exits`
-- Help and interaction: `help <command>`, `ask <npc> about <topic>`
-- Combat and escape observed in this experiment: `kick <target>`, `kill
-  <target>`, `flee`
+### Gold acquisition attempts:
+- `get all` / `get [item] from atm` → "You're broke!" 
+- `withdraw [amount]` → silent failure, no output confirming success or error
+- ATM in the wall did not dispense funds automatically; requires pre-deposited balance.
 
-Movement succeeds only when the current room has the requested exit. The Test
-4 transcript does not establish that commands are case-insensitive.
+### NPC interaction attempts:
+- Benefactor ("kind and caring soul") responded to `all` with "get some clothes on! Here, I will help." (did NOT give gold).
+- Benefactor redirect to donation room when `ask benefactor about newbie` issued.
+- No cityguard observed in temple hall; earlier cityguards seen at other locations only.
 
-## Rejected Hallucinations
-
-- The character is not named `dummydummy`.
-- The character is not level 127.
-- `Wall Road` is not a confirmed current room title.
-- Case-insensitive movement commands were not verified.
+### Movement state:
+- The character has reached Temple of Midgaard but gold is insufficient for direction tolls.
+- Reading Room (west) — candidate Newbie Training area; unexplored due to gold requirement.
+- Down stairs from here lead to Temple Square, which loops back to Market Square via other tests' routes.
 
 ## Recommended Next Action
 
-Run `look`, `score`, and `exits` before moving again. Use their direct game
-output to confirm the exact room title, current vitals, and available routes,
-then write a memory checkpoint before resuming Test 4 exploration.
+Attempt the Donation Room eastward using `donate [gold_coins]` with whatever gold is carried, or re-examine Reading Room (west exit) after obtaining gold — likely needs a gold coin dropped as payment before passage through Donation Room becomes possible. If Reading Room itself serves as Newbie Training, verify by examining all exits and NPCs inside once accessed.
+

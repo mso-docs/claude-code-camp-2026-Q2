@@ -1,0 +1,4 @@
+interface:
+  display_name: "Write Completion Report"
+  short_description: "Create consistent, unique MUD test reports"
+  default_prompt: "Use $write-completion-report to initialize and maintain this MUD test report."

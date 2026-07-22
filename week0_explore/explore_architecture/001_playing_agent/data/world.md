@@ -96,6 +96,24 @@ Status: Confirmed during Test 3
 - A guildmaster was observed in the practice yard.
 - A downward route from the practice yard was observed but not explored.
 
+### Confirmed Guildmaster Route
+
+From the Temple of Midgaard, the Test 3 route was:
+
+| Command | Destination |
+| --- | --- |
+| `s` | Temple Square |
+| `s` | Market Square |
+| `e` | First eastern Main Street segment |
+| `e` | Eastern Main Street guild segment |
+| `s` | Entrance Hall of the Guild of Swordsmen |
+| `e` | Bar of Swordsmen |
+| `s` | Tournament and Practice Yard |
+
+The guildmaster was observed in the Tournament and Practice Yard. Use this as
+a navigation lead and confirm current rooms and exits from live output; do not
+assume the character begins at the Temple.
+
 ## Inside the East Gate
 
 Status: Confirmed

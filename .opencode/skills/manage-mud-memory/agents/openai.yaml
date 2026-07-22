@@ -1,0 +1,4 @@
+interface:
+  display_name: "Manage MUD Memory"
+  short_description: "Persist verified MUD state across sessions"
+  default_prompt: "Use $manage-mud-memory to load and checkpoint durable MUD state."

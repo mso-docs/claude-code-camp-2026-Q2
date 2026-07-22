@@ -1,0 +1,4 @@
+interface:
+  display_name: "Create Skills"
+  short_description: "Create concise, reusable agent skills"
+  default_prompt: "Use $create-skills to create a reusable skill for this capability."

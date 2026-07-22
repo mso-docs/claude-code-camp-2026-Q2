@@ -1,0 +1,4 @@
+interface:
+  display_name: "Login to MUD"
+  short_description: "Open and authenticate a persistent MUD session"
+  default_prompt: "Use $login-mud to establish an authenticated persistent MUD session."
