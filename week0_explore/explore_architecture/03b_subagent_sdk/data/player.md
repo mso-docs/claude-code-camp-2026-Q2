@@ -10,8 +10,10 @@
 - **Age:** 17 years old (live, via `score`)
 
 ## Location
-- **Room:** The Temple Of Midgaard - southern end of the temple hall (live,
-  via login banner and `look`). Exits: n e s w d.
+- **Room:** Market Square, the famous Square of Midgaard (live, via `look`
+  this session). Exits: n (temple square) e w (main street) s (common
+  square). Started session in Temple Of Midgaard; traveled south through
+  Temple Square to Market Square.
 - **Map Coordinates:** unknown
 
 ## Vitals
@@ -66,4 +68,14 @@ Smarty's age/gender/class/stats while both sessions are active.
   connection", "can't find pane") between commands; each time a fresh
   `mcp__mud__start` call reconnected to the same authenticated session and
   same room/state without any apparent data loss.
+- Subsequent session (this update): login stalled at
+  `password_prompt_received` for ~24 consecutive `mcp__mud__start` retries
+  before succeeding (MUD_LOGIN_OK via `reconnecting` stage) - consistent
+  with the recurring instability pattern (previously 8-35 retries). Landed
+  live at Market Square. Reconfirmed both sessions online via `who`
+  ([ 1 Cl] Dummy the Believer, [ 1 Mu] Smarty the Apprentice of Magic).
+  Sent `tell smarty` (delivery confirmed via echo) and `save`, with the
+  delayed "Saving Dummy." message confirmed via a follow-up `look` -
+  final save live-confirmed again. No damage/death; vitals unchanged
+  (16H/100M/83V).
 

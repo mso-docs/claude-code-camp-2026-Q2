@@ -37,8 +37,14 @@
 - **Race:** NOT YET OBSERVED
 
 ## Location
-- **Room:** The Temple Of Midgaard - southern end of the temple hall (live,
-  via `look`/login banner). Exits: n e s w d.
+- **Room:** Market Square (live, via `look` this session: "You are standing
+  on the market square, the famous Square of Midgaard." Large peculiar
+  statue in the middle; roads lead in every direction - north to temple
+  square, south to common square, east/west main street; a cityguard NPC
+  present). Exits: n e s w. (Previously recorded as The Temple Of Midgaard,
+  southern end of the temple hall, exits n e s w d - character's login/
+  reconnect room changed between sessions; cause not observed by this
+  character.)
 
 ## Vitals
 - **Hit Points:** 16(16) (live, via `score` and prompt bar "16H")
@@ -96,3 +102,14 @@ Determine and live-confirm Smarty's age, gender, class, and stats while
 cooperating with the primary character.
 
 ## Notes
+- Re-verification run (fresh `start` this session, after 10 login retries
+  and several mid-session disconnects): every value above (age, HP/mana/
+  move, AC, alignment, exp, gold, questpoints, playtime, condition,
+  equipment, inventory) was independently re-confirmed live via fresh
+  `score`/`equipment`/`inventory` calls and matched the prior session's
+  values exactly - no drift. `save` was re-confirmed successful this
+  session too, again returning "Saving Dummy." (not "Saving Smarty."),
+  reproducing the name discrepancy a further time. Gender and class remain
+  unresolved by any live command this character has access to; not
+  re-attempted further since prior sessions already exhausted reasonable
+  in-game options (help, practice, cross-session look-at-self).

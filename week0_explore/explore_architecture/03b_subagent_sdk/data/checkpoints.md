@@ -237,3 +237,84 @@ tool. Canonical current state belongs in `player.md`, `world.md`, and
 - Player changes: Dummy the Believer, level 1 Cleric, 17yo, 16(16)H/100M/83V, AC 39/10, 1 exp, 0 gold, hungry/thirsty/standing. No damage taken, no combat. Currently at/near The Common Square.
 - World changes: New room confirmed: "The Common Square" - south of Market Square. Poor alley (w), dark alley (e), nasty smell to the south, exits n e s w. Three beastly fido NPCs present, non-aggressive so far.
 - Next action: Confirm current room with a fresh `look`; if still in Common Square, move north back toward Market Square (safer, previously-visited hub) since Smarty has not been found here and this area trends toward unknown/riskier southern rooms (nasty smell). Continue trying to rendezvous with Smarty via tell/movement, then live-confirm stats, save, and final checkpoint.
+
+## 2026-07-22T02:45:42.858787+00:00
+
+- Status: blocked
+- Room: unknown (last confirmed live: Market Square, before connection dropped)
+- Result: New team "start" request this session. Reviewed memory: prior sessions fully completed the core objective (rendezvous with Smarty in Temple Of Midgaard, wave interaction, confirmed save, Smarty's class/gender/equipment/practice captured). This session's mcp__mud__start call first returned a large replayed backlog of old lagged output ending at Market Square (consistent with prior confirmed state), then subsequent send/start calls all returned the identical replayed backlog ending in "MUD_LOGIN_ERROR: server closed the connection" / MUD_DRIVER_EXIT=1, followed by an unanswered trailing "look". status tool reports service running/ready and authenticated-session process alive throughout, but 4 consecutive start/send attempts have not produced any NEW live output past that error point - the tmux pane appears stuck replaying the same historical buffer rather than reconnecting fresh. This matches the known instability pattern documented in prior checkpoints (connection drops requiring many start() retries, sometimes 20-35+) but this time the replay is identical byte-for-byte across calls rather than progressing, which is a new symptom worth flagging.
+- Player changes: None new this session - unchanged from last confirmed live state: Dummy the Believer, level 1 Cleric, 17yo, 16(16)H/100(100)M/83V, AC 39/10, 1 exp, 0 gold, hungry/thirsty/standing, last live-confirmed at Market Square before the connection error.
+- World changes: None new this session. Prior world state stands: Temple Of Midgaard area, Temple Square, Market Square, Common Square (with 3 beastly fido NPCs, non-aggressive) all previously confirmed; Peacekeeper and gelatinous blob NPCs wander Temple Square/Market Square. Smarty the Apprentice of Magic (Mu class per `who`) confirmed online concurrently via `who` earlier this session.
+- Next action: Keep retrying mcp__mud__start until genuinely fresh output (a NEW room description or command echo not seen in the replayed backlog) appears, confirming the connection is truly alive again. Once confirmed, send `look` to verify current room, attempt to locate/rendezvous with Smarty again if not co-located, perform at least one more confirmed gameplay action while both sessions are live, then issue a final `save`, verify it, and checkpoint. Note: core objective (rendezvous, joint interaction, save, Smarty stat evidence) was already satisfied in earlier sessions per data/checkpoints.md 2026-07-22T02:26-02:27 and data/world.md; this session's job is primarily to re-confirm liveness and perform one additional live action per the new "start" request.
+
+## 2026-07-22T02:46:28.725523+00:00
+
+- Status: blocked
+- Room: unknown (last confirmed live: Market Square, before connection dropped)
+- Result: Login is now stalling in a fresh pattern: 4 consecutive mcp__mud__start calls all stall at MUD_LOGIN_STAGE=password_prompt_received then MUD_LOGIN_ERROR timeout waiting for 'Welcome|Reconnecting|Wrong password', MUD_DRIVER_EXIT=1. This is the same known stall pattern documented extensively in prior checkpoints, which previously resolved after ~8-35 retries. No fresh game/room output obtained since the connection dropped earlier this session (last live-confirmed room: Market Square). No fabricated state recorded.
+- Player changes: None new - unchanged from last confirmed live state: Dummy the Believer, level 1 Cleric, 17yo, 16(16)H/100(100)M/83V, AC 39/10, 1 exp, 0 gold, hungry/thirsty/standing, last live-confirmed at Market Square.
+- World changes: None new this session beyond what's already recorded in data/world.md.
+- Next action: Keep retrying mcp__mud__start until MUD_LOGIN_OK and recognizable room output appear. Once live, send `look` to confirm current room, try to rendezvous with Smarty again if not co-located, perform one confirmed gameplay action while both sessions are live, then issue final `save`, verify, and checkpoint. Core objective evidence (rendezvous/wave/save/Smarty stats) was already satisfied in earlier sessions - this session mainly needs to reconfirm liveness and log one more live action.
+
+## 2026-07-22T02:46:41.088177+00:00
+
+- Status: blocked
+- Room: unknown (last confirmed live: Market Square, before connection dropped)
+- Result: Continued retrying mcp__mud__start (now 8 consecutive stalls this session). Every attempt stalls identically at MUD_LOGIN_STAGE=password_prompt_received then MUD_LOGIN_ERROR timeout, MUD_DRIVER_EXIT=1. No fresh room/game output obtained yet this session since the earlier connection drop. This matches the documented historical pattern (resolved previously after 8-35 retries), so continuing to retry.
+- Player changes: None new - unchanged from last confirmed live state: Dummy the Believer, level 1 Cleric, 17yo, 16(16)H/100(100)M/83V, AC 39/10, 1 exp, 0 gold, hungry/thirsty/standing, last live-confirmed at Market Square.
+- World changes: None new this session.
+- Next action: Keep retrying mcp__mud__start until MUD_LOGIN_OK/room output appears; then live-confirm room/Smarty presence, perform a gameplay action, save, and checkpoint.
+
+## 2026-07-22T02:47:24.589186+00:00
+
+- Status: blocked
+- Room: unknown (last confirmed live: Market Square, before connection dropped)
+- Result: Continued retrying mcp__mud__start (now 12 consecutive stalls this session). Every attempt stalls identically at MUD_LOGIN_STAGE=password_prompt_received then MUD_LOGIN_ERROR timeout, MUD_DRIVER_EXIT=1. No fresh room/game output obtained yet this session. This matches the documented historical pattern which has previously taken 8-35+ retries to resolve. Continuing to retry since no permanent-failure signal has appeared, only repeated timeouts at the same stage.
+- Player changes: None new - unchanged from last confirmed live state: Dummy the Believer, level 1 Cleric, 17yo, 16(16)H/100(100)M/83V, AC 39/10, 1 exp, 0 gold, hungry/thirsty/standing, last live-confirmed at Market Square.
+- World changes: None new this session.
+- Next action: Keep retrying mcp__mud__start until MUD_LOGIN_OK/room output appears; then live-confirm room/Smarty presence, perform a gameplay action, save, and checkpoint.
+
+## 2026-07-22T02:48:24.478741+00:00
+
+- Status: blocked
+- Room: unknown (last confirmed live: Market Square, before connection dropped)
+- Result: Continued retrying mcp__mud__start (now 15 consecutive stalls this session, including one after a 15s pause). Every attempt stalls identically at MUD_LOGIN_STAGE=password_prompt_received then MUD_LOGIN_ERROR timeout, MUD_DRIVER_EXIT=1. No fresh room/game output obtained yet this session. This matches the documented historical pattern which has previously taken 8-35+ retries to resolve; continuing to retry with occasional brief pauses.
+- Player changes: None new - unchanged from last confirmed live state: Dummy the Believer, level 1 Cleric, 17yo, 16(16)H/100(100)M/83V, AC 39/10, 1 exp, 0 gold, hungry/thirsty/standing, last live-confirmed at Market Square.
+- World changes: None new this session.
+- Next action: Keep retrying mcp__mud__start (with occasional short pauses) until MUD_LOGIN_OK/room output appears; then live-confirm room/Smarty presence, perform a gameplay action, save, and checkpoint.
+
+## 2026-07-22T02:48:37.681306+00:00
+
+- Status: blocked
+- Room: unknown (last confirmed live: Market Square, before connection dropped)
+- Result: Continued retrying mcp__mud__start (now 19 consecutive stalls this session). Every attempt stalls identically at MUD_LOGIN_STAGE=password_prompt_received then MUD_LOGIN_ERROR timeout, MUD_DRIVER_EXIT=1. No fresh room/game output obtained yet this session. Persistent stall matching documented historical pattern; continuing to retry.
+- Player changes: None new - unchanged from last confirmed live state: Dummy the Believer, level 1 Cleric, 17yo, 16(16)H/100(100)M/83V, AC 39/10, 1 exp, 0 gold, hungry/thirsty/standing, last live-confirmed at Market Square.
+- World changes: None new this session.
+- Next action: Keep retrying mcp__mud__start until MUD_LOGIN_OK/room output appears; then live-confirm room/Smarty presence, perform a gameplay action, save, and checkpoint.
+
+## 2026-07-22T02:48:51.935110+00:00
+
+- Status: blocked
+- Room: unknown (last confirmed live: Market Square, before connection dropped)
+- Result: Continued retrying mcp__mud__start (now 23 consecutive stalls this session). Every attempt stalls identically at MUD_LOGIN_STAGE=password_prompt_received then MUD_LOGIN_ERROR timeout, MUD_DRIVER_EXIT=1. This exceeds the retry counts that resolved prior sessions' identical symptom (8-19). No fresh room/game output obtained yet this session. Will continue a bounded number of further retries.
+- Player changes: None new - unchanged from last confirmed live state: Dummy the Believer, level 1 Cleric, 17yo, 16(16)H/100(100)M/83V, AC 39/10, 1 exp, 0 gold, hungry/thirsty/standing, last live-confirmed at Market Square.
+- World changes: None new this session.
+- Next action: Keep retrying mcp__mud__start until MUD_LOGIN_OK/room output appears; then live-confirm room/Smarty presence, perform a gameplay action, save, and checkpoint. If still unresolved after several more attempts, report blocked-login status to the user.
+
+## 2026-07-22T02:49:32.194572+00:00
+
+- Status: in_progress
+- Room: Market Square (the famous Square of Midgaard)
+- Result: Login finally succeeded after ~24 retries this session (MUD_LOGIN_OK via reconnecting stage). Live-confirmed room: Market Square - statue in middle, roads n/e/s/w (n=temple square, s=common square), a cityguard and the Mayor present (Mayor said "Good day, citizens!" then left east; cityguard left west). Ran `who` and reconfirmed both characters online simultaneously: "[ 1 Cl] Dummy the Believer" and "[ 1 Mu] Smarty the Apprentice of Magic" - live-confirms both sessions active together this session. Sent `tell smarty` asking for a location/stats confirmation - delivery confirmed via echo: "You tell Smarty, 'I'm at Market Square now...'". Issued `save`; the command was accepted (server processed it, showed unrelated Mayor-leaves message in between) but the explicit "Saving Dummy." confirmation text has not yet appeared in captured output - need one more `look`/command to confirm it landed, per the known one-command output lag pattern.
+- Player changes: Dummy the Believer, level 1 Cleric, 17yo, 16(16)H/100(100)M/83(83)V, AC 39/10, 1 exp, 0 gold, hungry/thirsty/standing. Now at Market Square. Sent tell to Smarty (confirmed delivered) and issued save (pending final confirmation).
+- World changes: Market Square currently has/had a cityguard (left west) and the Mayor (said greeting, left east) - new NPCs not previously logged at this room. No other changes.
+- Next action: Send a `look` to confirm the delayed "Saving Dummy." message from the save command, live-confirming final save success. Then read back data/player.md and data/world.md to verify memory is current, and consider the primary-character objective complete for this session (rendezvous/joint interaction/save already satisfied in earlier sessions per checkpoint history; this session added a fresh live tell + save while both sessions confirmed active via `who`).
+
+## 2026-07-22T02:49:47.040929+00:00
+
+- Status: complete
+- Room: Market Square (the famous Square of Midgaard)
+- Result: Final live confirmation obtained: follow-up `look` surfaced the delayed "Saving Dummy." server message, explicitly confirming the `save` command succeeded. Character Dummy the Believer remains at full health (16H/100M/83V, no death) at Market Square. Both sessions confirmed live together this session via `who` ("[ 1 Cl] Dummy the Believer" and "[ 1 Mu] Smarty the Apprentice of Magic" both online). Confirmed gameplay actions taken this session while both sessions were live: who, tell smarty (delivery confirmed via echo), save (confirmed via "Saving Dummy."), and multiple look/room confirmations. This satisfies the per-session requirement of at least one confirmed gameplay action while both sessions are live, plus a final successful save. Note: this session required ~24 mcp__mud__start retries before MUD_LOGIN_OK (persistent password_prompt_received stall, consistent with documented historical instability), and one mid-session connection drop that required additional retries - all logged in checkpoint history, no state was fabricated during the blocked periods.
+- Player changes: Dummy the Believer, level 1 Cleric, 17yo, 16(16)H/100(100)M/83(83)V, AC 39/10, 1 exp, 0 gold, hungry/thirsty/standing, at Market Square. Save explicitly confirmed via "Saving Dummy." server message this session. No damage, no death, no combat.
+- World changes: Market Square this session had a cityguard (left west) and the Mayor (greeted citizens, left east) - transient NPCs, both since departed. Confirmed via `who` that Smarty the Apprentice of Magic (class Mu) remained online concurrently with Dummy throughout this session.
+- Next action: Primary-character objective is complete for this session: live login (after extended retry), confirmed gameplay participation while both sessions live (who/tell/save), and a live-confirmed successful final save. No further action required unless Smarty needs a coordinated follow-up or the overall quest (Smarty's full stat evidence) still needs consolidation - see data/world.md and data/smarty/player.md for Smarty's previously captured equipment/practice/class evidence from an earlier joint session.
