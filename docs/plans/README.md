@@ -13,6 +13,7 @@ Ruby/Python differences anticipated going in, how it'll be verified, and an
 - [04 · The API Client](04_api_client.md)
 - [05 · The Agent Loop](05_agent_loop.md)
 - [06 · The Logger](06_the_logger.md)
+- [07 · The Boukensha.run DSL](07_the_run_dsl.md)
 
 See also the living [architecture diagram](../architecture-baseline.md),
 updated alongside each step.
