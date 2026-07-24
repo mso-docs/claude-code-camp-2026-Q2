@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+cd "$(dirname "$0")/../12_context"
+uv run python boukensha_loader.py "$@"

@@ -455,3 +455,107 @@ Other notes:
   README crediting this step with adding it is inaccurate.
 - No real terminal I/O in tests — driven entirely through Textual's
   official headless harness (`App.run_test()`/`Pilot`).
+
+## Step 12 · Context Management (final step)
+
+```
+Config (flat methods)                    Tasks::Base/Tasks::Player
+  provider_type, model,          ◀── replaces  and prompts/system.md's
+  system_prompt, agent_max_*                   package default — DELETED
+
+boukensha.run()/repl()
+     │
+     ├─ models.context_window(model)  ──▶  Context(context_window=...)
+     │
+     ▼
+Context                          three numbers, not one:
+  context_window   (ceiling)
+  current_tokens   (REPLACED each response.usage.input_tokens — window pressure)
+  turn_tokens      (ACCUMULATED input+output per call — spend budget)
+
+Agent.run()
+     │
+     ├─ reset_turn_tokens()
+     ├─ _compact_if_needed()  ──▶ needs_compaction()? ──▶ compact_messages()
+     │                             (>= compaction_threshold, default 0.85)   ──▶ Logger.compaction
+     │
+     └─ loop: cancel_event? ──▶ iteration limit? ──▶ token limit? ──▶ call
+                                  (max_iterations)    (max_turn_tokens, NEW)
+                                       │                    │
+                                       └────────┬───────────┘
+                                                 ▼
+                                          _wrap_up(reason)   one uncounted final call
+
+Every backend.parse_response() normalizes reasoning into:
+  {"type": "reasoning", "text":, "signature":?, "redacted":?}   ──▶ Logger.reasoning
+```
+
+Two independent threads of change, both real (confirmed by diff against
+Ruby, not assumed from the Ruby README — which documents only the
+context-management half and says nothing about the other):
+
+- **Tasks abstraction removed.** `boukensha/tasks/` (`Tasks::Base`,
+  `Tasks::Player`) is deleted outright, along with the package-shipped
+  `prompts/system.md` fallback — an architectural layer carried since
+  step 00, gone in one step. `settings.yaml`'s schema (`tasks.player.*`)
+  is unchanged; only the code path collapsed to flat `Config` properties.
+  `Config.system_override` survives as dead code — reads a *different*
+  settings key (`system.override`) than the one `system_prompt` actually
+  uses (`tasks.player.prompt_override.system`), proven independently by
+  test: flipping the live key while leaving the dead one `True` still
+  changes which prompt file loads.
+- **Context accounting fixed.** `current_tokens` (replaced, window
+  pressure) and `turn_tokens` (accumulated, spend budget) are now
+  distinct — previously an unrelated output-length constant
+  (`token_budget`) was shown as if it were the window ceiling, and the
+  on-screen usage number grew forever, surviving even `/clear`. A second
+  circuit breaker (`max_turn_tokens`, default 60,000) trips independently
+  of `max_iterations`; automatic compaction fires once at the top of
+  `run()`, before the loop, when usage crosses `compaction_threshold`
+  (default 0.85) — drops `ceil(len(messages) * 0.40)` messages, clamped to
+  `len - 2`. `/compact` (Repl and Tui) triggers the same
+  `compact_messages()` on demand but — an asymmetry ported as-is from
+  Ruby, not "fixed" — emits no `Logger.compaction` event.
+
+Reasoning-block normalization touches all five backends: Anthropic's
+`thinking`/`redacted_thinking` round-trip with signature preserved;
+Gemini's `thoughtSignature` round-trips on both `reasoning` and `tool_use`
+blocks (plus one confirmed-dead `thinkingLevel: "LOW"` branch for a model
+commented out of `MODELS`, ported exactly rather than simplified away);
+Ollama/OllamaCloud's `thinking` field becomes a `reasoning` block, dropped
+on the way back (the API won't accept it). **OpenAI is a full rewrite**,
+not incremental — `/v1/chat/completions` → `/v1/responses` entirely:
+different message array (`to_input`, interleaved
+`function_call`/`function_call_output` items instead of one message with
+`tool_calls`), flat tool shape (no `function:` wrapper), and a
+`reasoning: {"effort": "none"}` payload field.
+
+A quieter real change, found only by diffing `tools/file_system.rb` (not
+mentioned in Ruby's README at all): `list_directory` and `search_files`
+are disabled — commented out, not deleted, in both languages — "leftover
+from when this app was a coding harness."
+
+Other notes:
+
+- `Tui`'s idle progress/status lines are colour-coded by
+  `context.usage_pct` (`bright_black` < 70%, `yellow` 70–84%, `red` ≥
+  85%, plus a `⚠` indicator at ≥ 85% in the status bar) — replacing the
+  old unbounded `_session_input_tokens`/`_session_output_tokens`
+  counters.
+- Step 11's two continuing decisions hold unchanged: cooperative
+  `cancel_event`/`TurnInterrupted` cancellation (still not in Ruby, now
+  also checked ahead of the new compaction step), and `Tui` showing the
+  real `self.repl.max_iterations` instead of Ruby's still-hardcoded
+  `Agent::MAX_ITERATIONS` display bug (confirmed unchanged in this step's
+  `tui.rb` too).
+- Verification closed with the same live-network sanity check as every
+  step since 05: `boukensha.run()` with a fake Anthropic key reaches
+  `api.anthropic.com` for real and returns a `401`-driven `ApiError`,
+  confirming the full `Config`/`models.py`/`Context`/backend/`Agent`
+  pipeline wiring is intact end to end — plus a headless `Tui` built
+  through the exact same construction path `boukensha.repl()` uses, and a
+  real run of `bin/12_context --no-tui` against a scratch config dir.
+
+This is the last step of the port — every `week1_baseline/ruby/00`–`12`
+step now has a corresponding, independently verified
+`week1_baseline/python/` counterpart.

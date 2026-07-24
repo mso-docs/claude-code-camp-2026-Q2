@@ -282,4 +282,41 @@ so the same fix carries forward for the same reason.
 
 ## Outcome
 
-_(fill in after implementation)_
+Implemented as planned, with two findings surfaced only during
+implementation/verification that weren't in the original plan:
+
+- **`version.py` needed a bump.** `boukensha/version.rb` moved `0.11.0` →
+  `0.12.0` this step; the plan's file-scope table didn't call this out
+  explicitly and it was caught only by diffing every "copy forward
+  unchanged" candidate against Ruby before trusting the label, per this
+  port's standing practice of verifying rather than assuming. Fixed.
+- **`tools/file_system.rb` disables two tools.** `list_directory` and
+  `search_files` are commented out (not deleted) in Ruby's step 12 —
+  "leftover from when this app was a coding harness; the player agent has
+  no use for them yet." Not mentioned anywhere in the plan (it was scoped
+  before this diff was run) or in Ruby's own README. Ported the same way:
+  commented out, not removed, with the same explanatory comment; the now-
+  unused `import re` was dropped from the Python file since Python (unlike
+  Ruby) needs that cleaned up to avoid a dead import.
+
+Everything else matched the plan closely: the Tasks-removal, the
+Context/Agent dual-circuit-breaker and compaction rework, the
+`system_override?` dead-code quirk, all five backends' reasoning
+normalization (including OpenAI's full `/v1/responses` rewrite and
+Gemini's confirmed-dead `thinkingLevel: "LOW"` branch), `/compact`'s
+asymmetry versus automatic compaction, and Tui's colour coding all landed
+exactly as designed and were independently verified — real fake-client/
+fake-registry unit tests for `Context`/`Agent`/all five backends/`Config`/
+`Repl`, Textual's official headless harness for `Tui` (including a full
+construction-path integration test mirroring `boukensha.repl()` and a real
+`bin/12_context --no-tui` run), and the same live `api.anthropic.com`
+401-boundary sanity check used since step 05. No test failures required a
+product-code fix in this step — the few failures hit along the way (wrong
+fake-response queue ordering, a nonexistent `RichLog.line_count` attribute
+in a test script) were diagnosed as test bugs and fixed as such, not as
+product bugs.
+
+This is the last step of the port: all of `week1_baseline/ruby/00`–`12`
+now has a corresponding, independently verified
+`week1_baseline/python/` counterpart, each committed as its own commit
+per the workflow established partway through this port.
