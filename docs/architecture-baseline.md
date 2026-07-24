@@ -70,3 +70,40 @@ README for detail):
 - Ruby's `dispatch` must convert JSON's string-keyed args to symbol keys
   before calling a block with keyword args; Python keyword args already
   accept string keys, so that translation step doesn't exist in the port.
+
+## Step 03 · The Prompt Builder
+
+```
+                 ┌─────────────┐
+                 │   Context    │  system, messages[], tools{}
+                 └──────┬───────┘
+                         │
+                         ▼
+                 ┌───────────────┐
+                 │ PromptBuilder │  to_api_payload() / headers() / url()
+                 └──────┬────────┘
+                         │ delegates to whichever backend is configured
+        ┌────────┬───────┼────────┬──────────────┐
+        ▼        ▼       ▼        ▼              ▼
+   Anthropic   OpenAI  Gemini   Ollama      OllamaCloud
+   (backends/base.py: model validation, context_window, cost estimate — shared)
+```
+
+Each backend owns its own `MODELS` table and wire format (system prompt
+placement, tool-result wrapping, role naming — see the step's README for the
+full comparison). `PromptBuilder` never touches the network; it only builds
+the payload dict.
+
+Additional notes for this step:
+
+- Ruby's dual `self.model_info(model)` (class method) / `model_info`
+  (instance method) — legal in Ruby because class and instance methods
+  don't share a namespace — became `lookup_model_info` (classmethod) +
+  `model_info` (instance attribute) in Python, since Python doesn't have
+  that separation.
+- Carried a Ruby quirk forward rather than fixing it: `PromptBuilder.to_messages()`
+  only works with backends whose `to_messages` takes one argument
+  (Anthropic, Gemini). OpenAI/Ollama/OllamaCloud need `(system, messages)`.
+  Never triggered in practice — `to_api_payload()` is the only method the
+  example calls, and each backend's own `to_payload` invokes `to_messages`
+  correctly internally.
