@@ -349,3 +349,47 @@ console-script entry point. Notes:
   `uv tool install .`), not just library-level calls — including the
   hatchling packaging gotcha where a standalone top-level module needed
   `force-include`, not `include`, to actually end up in the wheel.
+
+## Step 10 · A Standard Tool Library
+
+```
+boukensha.run(task=, working_dir=, allowed_commands=, shell_timeout=, mud=, block=)
+     │
+     ├─ working_dir (default: os.getcwd(), resolved per-call) ──▶ file_system.register()
+     │                                                             shell.register()
+     ├─ mud: False→skip │ None→Config.mud_* │ dict→as given ──▶ mud_tools.register()
+     │                                                             │
+     │                                                             ▼
+     │                                                   mud_manager.Session (persistent,
+     │                                                   auto-connects at registration)
+     │                                                             │
+     │                                                    threading.Thread reader ──▶
+     │                                                    buffer (threading.Condition) ──▶
+     │                                                    IAC-stripped text
+     │
+     └─ block(RunDSL(registry))   ◀── caller's own tools, registered last
+```
+
+`ITERATIONS.md` (this repo's own doc) claims steps 10–12 replace all this
+with an MCP host — confirmed false by grepping every `.rb` file in
+`week1_baseline/ruby/`, zero matches. What's actually here is the original
+built-in tool modules; ported accordingly. `mud_manager` (threaded telnet
+client + ~50 CircleMUD command builders) had no prior Python port and was
+built from scratch from `week0_explore/mud_manager/`.
+
+Notes:
+
+- Ruby's `Mutex`+`ConditionVariable` → Python's single `threading.Condition`.
+- Ruby's `:return`/`:enter` symbol sentinel ("send a bare Enter") → Python's
+  `None` — no symbols in Python, and `None` is the natural "no value."
+- A real naming collision: `run()`/`repl()`'s `mud=` parameter would shadow
+  a bare `from .tools import mud` — aliased to `mud_tools` on import. Ruby
+  never hits this since `Tools::Mud` (capitalized) and a local `mud`
+  variable are different identifiers there.
+- `working_dir`'s `os.getcwd()` default is resolved inside the function
+  body, not as a signature default — same class of bug as step 06's
+  `Agent(logger=Logger())` trap, since a signature default is evaluated
+  once at definition time and would freeze the cwd.
+- No live CircleMUD server in this sandbox — `mud_manager.Session` and
+  `tools.mud` verified against fake TCP servers built for this step,
+  including real IAC negotiation bytes mixed into a login sequence.

@@ -2,7 +2,7 @@
 
 **Ruby reference:** `week1_baseline/ruby/10_standard_tool_library/` (+ `week0_explore/mud_manager/` for `Tools::Mud`)
 **Python port:** `week1_baseline/python/10_standard_tool_library/`
-**Status:** Planned
+**Status:** Done
 
 ## Scope note — see prior discussion
 
@@ -198,4 +198,31 @@ server, the same pattern used for `Client`'s HTTP tests in step 04.
 
 ## Outcome
 
-_(fill in after implementation)_
+Matched the plan closely. One thing found only during implementation: a
+real naming collision between `run()`/`repl()`'s `mud=` parameter and a
+bare `from .tools import mud` import — the parameter shadows the module
+inside the function body. Ruby never hits this (`Tools::Mud`, capitalized,
+is a different identifier from a local `mud` variable there). Fixed with
+an aliased import (`from .tools import mud as mud_tools`); first attempt
+at working around it inline (before reaching for the alias) left some
+genuinely broken placeholder lines that got caught and cleaned up before
+testing, not after.
+
+Every verification-plan item passed: `mud_manager.primitives` across four
+categories including error paths; `mud_manager.session`'s login flow, IAC
+stripping, `LoginError`/`ConnectionError`, and `read_until_quiet` timing
+against fake TCP servers (initial test attempts had two timing-related
+test-design bugs — conflating `login()`'s own internal quiet-read with a
+separate one, and a fake server closing on a fixed timer that raced the
+test's own execution time — both diagnosed as test bugs, not port bugs,
+before fixing the tests rather than the code); `Tools::FileSystem`'s path
+traversal guard and full CRUD+search round trip; `Tools::Shell`'s
+allow-list (confirmed via a call-counting patch that a rejected command
+never reaches `subprocess.run`) and enforced timeout; `Tools::Mud` end to
+end against a fake server across multiple tool categories; all three
+`mud:` resolution states; and the REPL banner's `mud:` line across four
+states. Finished with the same live-API sanity check as every step since
+05 — a real request against `api.anthropic.com` with a fake key,
+confirming the full pipeline (including the new tool auto-registration)
+still wires together correctly. See
+[`python/10_standard_tool_library/README.md`](../../week1_baseline/python/10_standard_tool_library/README.md).
