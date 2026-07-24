@@ -14,6 +14,7 @@ Ruby/Python differences anticipated going in, how it'll be verified, and an
 - [05 · The Agent Loop](05_agent_loop.md)
 - [06 · The Logger](06_the_logger.md)
 - [07 · The Boukensha.run DSL](07_the_run_dsl.md)
+- [08 · The REPL Loop](08_the_repl_loop.md)
 
 See also the living [architecture diagram](../architecture-baseline.md),
 updated alongside each step.
