@@ -75,11 +75,11 @@ tables (context window + whatever else you want tracked) the same way.
 
 ## 3. Run it
 
-**Important gotcha**: `bin/12_context` `cd`s into the step folder before
-running, so the "current working directory" `.boukensha` resolution rule
-looks in *that* folder, not the repo root — it'll silently fall through
-to `~/.boukensha` otherwise. Always export `BOUKENSHA_DIR` pointing at
-the repo's config dir first:
+`bin/12_context` uses the step-12 Python environment without changing the
+directory where you launched it. Launching from the repo root therefore keeps
+the agent's file and shell tools rooted at the repo and lets them access the
+memory files under `.boukensha/memory/`. Exporting `BOUKENSHA_DIR` explicitly
+is still recommended so config resolution remains unambiguous:
 
 ```bash
 export BOUKENSHA_DIR="$(pwd)/.boukensha"
@@ -111,11 +111,5 @@ export BOUKENSHA_DIR="$(pwd)/.boukensha"
 
 ## Alternative to exporting BOUKENSHA_DIR every time
 
-Symlink the repo's config dir into the step folder itself so the cwd
-rule picks it up automatically:
-
-```bash
-ln -s ../../../.boukensha week1_baseline/python/12_context/.boukensha
-```
-
-Then you can drop the `export BOUKENSHA_DIR=...` line entirely.
+When you always launch from the repo root, its `.boukensha/` directory is
+discovered automatically and the export can be omitted.

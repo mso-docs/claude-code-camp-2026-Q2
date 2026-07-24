@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 
-cd "$(dirname "$0")/../12_context"
-uv run python boukensha_loader.py "$@"
+step_dir="$(cd "$(dirname "$0")/../12_context" && pwd)"
+uv --project "$step_dir" run python "$step_dir/boukensha_loader.py" "$@"
