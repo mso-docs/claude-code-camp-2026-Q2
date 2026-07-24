@@ -18,6 +18,7 @@ Ruby/Python differences anticipated going in, how it'll be verified, and an
 - [09 · Global Executable](09_global_executable.md)
 - [10 · A Standard Tool Library](10_standard_tool_library.md)
 - [11 · A Terminal UI](11_tui.md)
+- [12 · Context Management](12_context.md)
 
 See also the living [architecture diagram](../architecture-baseline.md),
 updated alongside each step.
