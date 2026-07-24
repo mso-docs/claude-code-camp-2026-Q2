@@ -2,7 +2,7 @@
 
 **Ruby reference:** `week1_baseline/ruby/08_the_repl_loop/`
 **Python port:** `week1_baseline/python/08_the_repl_loop/`
-**Status:** Planned
+**Status:** Done
 
 ## Goal
 
@@ -130,4 +130,25 @@ terminal I/O:
 
 ## Outcome
 
-_(fill in after implementation)_
+Matched the plan on every anticipated design decision, and the README
+sanity-check paid off: the `Logger#turn`/banner claim was confirmed false
+exactly as suspected (zero diff in `logger.rb`). Also decided, mid-write,
+not to factor `run()`/`repl()`'s duplicated setup logic into a shared
+helper — the Ruby reference doesn't either (independent, copy-pasted
+method bodies), and this step's Ruby source didn't refactor that away, so
+neither did the port.
+
+Every verification-plan item passed: scripted-stdin drive through all
+built-in commands (`/quiet`, `/loud`, `/clear`, `/help`, `/exit`, blank
+lines) and two normal turns proving history accumulation, a spy on
+`Agent.__init__` confirming a fresh instance per turn with
+`context`/`registry` identity shared, EOF and mid-turn-`ApiError`
+recovery, `Context.clear_messages()`, the new CWD `.boukensha/` config
+tier, the friendlier `401` message, and all three of `Agent`'s new
+`add_message` persistence sites independently. A real end-to-end run via
+piped stdin (`"list the files here\n/exit\n"`) against a fake Anthropic
+key rendered the real banner, hit the live API, printed the new 401
+message, and the REPL correctly recovered to process `/exit` — the
+session log recorded `session_start`/`turn`/`iteration`/`prompt` as
+expected. See
+[`python/08_the_repl_loop/README.md`](../../week1_baseline/python/08_the_repl_loop/README.md).

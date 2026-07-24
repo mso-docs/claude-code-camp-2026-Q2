@@ -261,3 +261,51 @@ required. Additional notes for this step:
   dropped in step 06's Ruby snapshot are back in step 07's — snapshot
   drift between the per-step reference directories, not a design change.
   Restored to match, still unused.
+
+## Step 08 · The REPL Loop
+
+```
+caller ──▶ boukensha.repl(block=configure)
+              │  (same setup as run(), deliberately duplicated not shared —
+              │   Ruby doesn't factor it out either)
+              ▼
+        Repl(context, registry, builder, client, logger, ...).start()
+              │
+              ▼ loop, reading sys.stdin.readline()
+     ┌────────┴─────────────────────────────────────┐
+     │ /exit /quit /help /quiet /loud /clear         │  built-in commands,
+     │ (handled by Repl, never reach the agent)      │  not sent to the model
+     └────────┬───────────────────────────────────────┘
+              │ anything else
+              ▼
+     context.add_message("user", input)
+     agent = Agent(context, registry, builder, client, logger, ...)  ◀── fresh
+     agent.run()                                                        each turn
+              │
+              ▼
+     print(result)   (unconditional — Agent itself prints nothing)
+              │
+              └─▶ loop back to prompt (context carries history forward)
+```
+
+`Agent.run()` now also does `context.add_message("assistant", text)` right
+before returning, in all three of its return paths (normal `end_turn`,
+successful wind-down, `ApiError`-fallback wind-down) — the change that
+actually makes cross-turn history possible; before this step the final
+reply was returned but never stored.
+
+Additional notes for this step:
+
+- The Ruby README's claim that `Logger#turn` prints a `╔══ turn N ══╗`
+  banner is simply false — `logger.rb` has zero diff from step 07 and
+  `turn()` still only writes JSONL. The banner, if any, is `Repl`'s job.
+  Caught by diffing rather than trusting the README — worth remembering.
+- `Config`'s dir resolution gains a real third tier: a `.boukensha/` in
+  the current working directory (if it exists) now outranks `~/.boukensha`,
+  though `$BOUKENSHA_DIR` still overrides both.
+- `/quiet`/`/loud` toggle real global state that nothing currently reads —
+  ported faithfully, flagged so the no-visible-effect isn't mistaken for a
+  bug.
+- EOF handling needed `sys.stdin.readline()` (returns `""` at true EOF)
+  rather than `input()` (raises `EOFError`), to match Ruby's
+  `$stdin.gets` → `nil` pattern.
