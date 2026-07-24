@@ -393,3 +393,65 @@ Notes:
 - No live CircleMUD server in this sandbox — `mud_manager.Session` and
   `tools.mud` verified against fake TCP servers built for this step,
   including real IAC negotiation bytes mixed into a login sequence.
+
+## Step 11 · A Terminal UI
+
+```
+boukensha.repl(tui=True)
+     │
+     ▼
+Tui(Repl).run()                         textual App, replaces Repl's
+     │                                   print()/stdin I/O entirely
+     ├─ repl.on_output(cb)  ◀──────────  Repl still owns turns/commands/Agent
+     ├─ repl.logger.subscribe(queue.put) ◀── thread-safe handoff from worker
+     │
+     ├─ set_interval(tick) ──▶ drain queue.Queue ──▶ update reactive state
+     │                          ──▶ re-render progress/status Static widgets
+     │
+     └─ Enter ──▶ run_worker(thread=True)   ◀── real OS thread: our HTTP
+                        │                        calls are all blocking
+                        ▼
+              Repl.run_turn(text, cancel_event=Event())
+                        │
+              Agent(..., cancel_event=e)  ◀── NEW, not in Ruby: checked at
+                        │                      the top of every loop
+                        │                      iteration; Esc sets e
+                        ▼
+                 TurnInterrupted  ──▶  queue.put({"phase": "turn_interrupted"})
+```
+
+Ruby's `Tui` is built on `bubbletea` (Go's Elm-architecture TUI framework
+via a Ruby FFI gem with actual C-level patches in this repo) — a
+synchronous Model/Update/View loop. This port uses `textual`
+(asyncio/widget/CSS-based) — same visual result, different runtime
+underneath. The event-queue-drained-on-a-tick design was kept close to
+Ruby's own architecture rather than reaching for Textual's more "idiomatic"
+`call_from_thread` immediate-push option, since it reproduces the same
+discrete-tick update feel the reference UI actually has.
+
+Two real bugs surfaced only by testing, not by reading the code:
+
+- **Rich markup vs. literal bracket text.** `RichLog(markup=True)` parsed
+  Ruby's literal `"[interrupted]"`/`"[error] ..."` conversation strings as
+  unmatched style tags and silently dropped them. Fixed with
+  `markup=False` on the conversation log and `rich.markup.escape()` at the
+  render boundary for the progress/status bars (which also contain literal
+  brackets like `"[ready]"`).
+- **A deliberate divergence, not a bug**: Ruby's progress line shows the
+  hardcoded `Agent::MAX_ITERATIONS` constant (always 25), not the REPL's
+  actual configured ceiling — a latent Ruby display bug when a task
+  overrides `max_iterations`. This port shows the real configured value.
+
+Other notes:
+
+- Esc-interrupt is cooperative (a `threading.Event` checked between `Agent`
+  loop iterations), not a forced thread kill — Python has no safe
+  equivalent to Ruby's `Thread#raise` into another thread. An in-flight
+  HTTP call still completes; the turn stops at the next iteration boundary.
+- `/quiet`/`/loud` are genuinely removed in this step (from both `repl.rb`
+  and `boukensha.rb`, consistently) — not snapshot drift like earlier
+  steps' `mud_*`/`LoopError` toggling. Removed from `state.py` to match.
+- `Logger.subscribe` has existed in this port since step 07; the Ruby
+  README crediting this step with adding it is inaccurate.
+- No real terminal I/O in tests — driven entirely through Textual's
+  official headless harness (`App.run_test()`/`Pilot`).

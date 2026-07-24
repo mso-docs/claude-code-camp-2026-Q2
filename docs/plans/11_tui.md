@@ -2,7 +2,7 @@
 
 **Ruby reference:** `week1_baseline/ruby/11_tui/`
 **Python port:** `week1_baseline/python/11_tui/`
-**Status:** Planned
+**Status:** Done
 
 ## Goal
 
@@ -156,4 +156,41 @@ rather than inventing an ad hoc approach.
 
 ## Outcome
 
-_(fill in after implementation)_
+Matched the plan on the two pre-agreed design decisions (cooperative
+`cancel_event`, full fidelity) and on the overall architecture (Textual
+thread-mode worker + `queue.Queue` drained on a tick, mirroring Ruby's own
+design rather than reaching for Textual's more "native" immediate-push
+option). Two things found only by writing real tests, not by reading the
+code:
+
+1. **A genuine bug**: the conversation `RichLog` was created with
+   `markup=True`, so Ruby's literal `"[interrupted]"`/`"[error] ..."`
+   strings got parsed as unmatched Rich style tags and silently vanished.
+   First caught when an Esc-interrupt test correctly stopped the turn but
+   the `"[interrupted]"` message was missing from the rendered output.
+   Fixed with `markup=False` on the log and `rich.markup.escape()` at the
+   render boundary for the progress/status bars.
+2. **A deliberate divergence** worth flagging clearly: Ruby's progress
+   line displays the hardcoded `Agent::MAX_ITERATIONS` constant, not the
+   REPL's actual configured ceiling — a latent bug in the reference when a
+   task overrides `max_iterations`. Chose to show the real value instead,
+   documented inline so it doesn't read as an unnoticed discrepancy.
+
+Also chose, mid-implementation, to track plain-text mirrors of the
+progress/status widgets' last-rendered content (`self._progress_text`/
+`self._status_text`) rather than reach into Textual's private `Static`
+internals for test assertions — more robust and not coupled to Textual's
+implementation details.
+
+Every verification-plan item passed: `Repl`'s composability refactor in
+isolation, `Agent`'s `cancel_event` (multi-iteration cancellation
+mid-turn, and confirming an `Agent` without one is unaffected), the full
+`Tui` app driven through Textual's `run_test()`/`Pilot` harness (typed
+input triggering a turn, `/clear` and `ctrl+l`, `pageup`/`pagedown`
+scrolling, `ctrl+c`/`ctrl+d` quitting, `escape` interrupting a real
+in-flight fake turn with no further calls afterward), the progress line's
+full idle→active→idle cycle including the intermediate tool-call action
+text, `boukensha_loader.py`'s `--no-tui` and legacy `MUD_*` env var logic,
+and a final re-run of the unmodified `examples/demo.py` confirming `run()`
+is untouched by any of this step's changes. See
+[`python/11_tui/README.md`](../../week1_baseline/python/11_tui/README.md).
