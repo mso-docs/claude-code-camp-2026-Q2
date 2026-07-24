@@ -67,3 +67,34 @@ verified the retry/error/success logic against local throwaway HTTP
 servers (connection-refused → retries then `ApiError`; `503` → retries then
 succeeds; `400` → fails immediately, no retry). SSL needed no workaround, as
 predicted. See [`python/04_api_client/README.md`](../../week1_baseline/python/04_api_client/README.md).
+
+## Ruby build checklist (reference)
+
+The course's checklist for building `ruby/04_api_client` itself (not a
+Python-port checklist). Checked retrospectively.
+
+**1. Add the API Client Iteration**
+- [x] 1.1 `week1_baseline/ruby/04_api_client` exists with content
+- [x] 1.2 No unwanted `Zone.Identifier` files
+- [ ] 1.3 Runner under `week1_baseline/bin/ruby` — **doesn't exist**; actual runner is `week1_baseline/ruby/bin/04_api_client`, same deviation as steps 02–03
+
+**2. Configure a Provider**
+- [ ] 2.1 API key(s) added — **not present**: no `.env` exists yet at the repo's `.boukensha/`
+- [ ] 2.2 Provider/model configured in `settings.yaml` — **not present** either, same gap
+- [x] 2.3 `.env` excluded from Git — confirmed in `.gitignore` (`.env`, `.env.local`)
+
+**3. Test the API Client**
+- [ ] 3.1 Run the example — **not verified**, Ruby isn't installed in this sandbox
+- [~] 3.2 N/A — no config to fail on since it was never run here
+- [ ] 3.3 Confirm a successful provider response — **not verified**, no live credentials in this environment
+
+**4. Commit the Iteration**
+- [x] 4.1 Reviewed git status (as part of this investigation)
+- [x] 4.2 No secrets/`.env` staged — confirmed clean
+- [ ] 4.3 Commit the completed iteration separately — **not how the Ruby side happened** (one `Initial commit` for all of `ruby/`); the Python port now does commit one step at a time going forward
+
+**Real gap worth flagging:** neither the Ruby nor the Python API client has
+actually been exercised against a live provider in this environment — both
+are verified structurally/via mocks only, since `.boukensha/settings.yaml`
+and `.env` don't exist yet. Worth doing a real end-to-end run once you set
+those up.

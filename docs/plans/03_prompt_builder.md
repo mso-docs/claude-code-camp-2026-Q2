@@ -59,3 +59,30 @@ payload dict.
 ## Outcome
 
 Matches plan. See [`python/03_prompt_builder/README.md`](../../week1_baseline/python/03_prompt_builder/README.md).
+
+## Ruby build checklist (reference)
+
+The course's checklist for building `ruby/03_prompt_builder` itself (not a
+Python-port checklist). Checked retrospectively.
+
+**1. Add the Prompt Builder Iteration**
+- [x] 1.1 `week1_baseline/ruby/03_prompt_builder` exists with content
+- [x] 1.2 No unwanted `Zone.Identifier` files
+- [~] 1.3 Read the iteration README.md — read while planning the Python port, not verifiable as a past action
+
+**2. Add the Prompt Builder Runner**
+- [ ] 2.1/2.2 Runner at `week1_baseline/bin/ruby/03_prompt_builder` — **doesn't exist**; actual runner is `week1_baseline/ruby/bin/03_prompt_builder`. Same as step 02 — leaving pre-existing Ruby structure as-is
+- [ ] 2.3 Run the example — **not verified**, Ruby isn't installed here
+
+**3. Review the Prompt Builder** — understanding checks; covered in this plan's Design decisions and the step README's per-provider comparison
+
+**4. Verify Provider Configuration**
+- [ ] 4.1 Active provider selected from `.boukensha/settings.yaml` — **not currently possible**: no `settings.yaml` exists yet at the repo's `.boukensha/` (only `.keep`)
+- [ ] 4.2 Required API keys in `.env` — same gap, no `.env` present yet either
+- [x] 4.3 Only the selected provider needs credentials — architecturally true of both the Ruby and Python ports (each backend is only constructed for the configured provider)
+
+**5. Verify the Prompt Builder**
+- [x] 5.1 Ran the (Python) example — Ruby unverified, no Ruby installed
+- [x] 5.2 Confirmed payload matches the selected provider (Anthropic path; spot-checked the other four backends directly)
+- [ ] 5.3 Swap provider/model in `settings.yaml` and rerun to compare — **not done**, since no `settings.yaml` exists yet to edit
+- [ ] 5.4 Commit the completed iteration separately — **not how the Ruby side happened** (single `Initial commit` for all of `ruby/`); the Python side now does follow one-commit-per-step

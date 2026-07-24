@@ -42,3 +42,27 @@ message text.
 ## Outcome
 
 Matches plan. See [`python/02_the_registry/README.md`](../../week1_baseline/python/02_the_registry/README.md).
+
+## Ruby build checklist (reference)
+
+This is the course's checklist for building `ruby/02_the_registry` itself
+(not a Python-port checklist — this repo had no Python-track checklist for
+02). Checked retrospectively against the pre-existing `ruby/` tree, since it
+was already fully built before this port started.
+
+**1. Add the Registry Iteration**
+- [x] 1.1 `week1_baseline/ruby/02_the_registry` exists with content
+- [~] 1.2 Review the changes in README.md — can't verify a past action; the README exists and documents the changes, and I read it while planning the Python port
+- [x] 1.3 No unwanted `Zone.Identifier` files anywhere in `week1_baseline/ruby`
+
+**2. Review the Registry** — understanding checks, not artifacts; the code and its behavior were reviewed while writing the Python port (see this plan's Design decisions)
+
+**3. Run the Example**
+- [ ] 3.1 Runner at `week1_baseline/bin/ruby/02_the_registry` — **doesn't exist**. No top-level `week1_baseline/bin/` exists at all; the actual runner lives at `week1_baseline/ruby/bin/02_the_registry` instead. Decision: leave as-is, don't restructure pre-existing Ruby reference material to match this path
+- [~] 3.2 N/A given the above — the existing runner already targets `02_the_registry` correctly
+- [ ] 3.3 Run the example — **not verified**: Ruby isn't installed in this sandbox
+
+**4. Verify the Iteration**
+- [ ] 4.1 Confirm the example runs successfully — unverified, no Ruby available
+- [x] 4.2 Reviewed git status (as part of this investigation)
+- [ ] 4.3 Commit the completed Registry iteration separately — **not how it happened**: all of `ruby/00`–`12` landed in one `Initial commit`, not one commit per iteration
