@@ -1,13 +1,14 @@
 tasks:
   player:
-    provider: anthropic       # swap to "ollama" to use your local server (no API key needed)
-    model: claude-sonnet-4-6  # swap to "qwen3.6:27b" or "qwen3.6:35b-a3b" (both whitelisted
-                               # in boukensha/backends/ollama.py + boukensha/models.py)
+    provider: ollama
+    model: qwen3.6:35b-a3b
 
 agent:
   max_iterations: 25
   max_turn_tokens: 60000
 
-# Only read when provider: ollama above. Uncomment and fill in your server:
-# ollama:
-#   host: "http://your-dns-name:port"
+mud:
+  host: localhost
+  port: 4000
+  username: dummy
+  password: helloworld

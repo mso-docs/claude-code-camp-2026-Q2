@@ -44,7 +44,7 @@ class Config:
         # to point at a non-default Ollama host either) — added for local
         # testing against a custom server. run()/repl()'s ollama_host=
         # kwarg still overrides this when passed explicitly.
-        return self.dig("ollama", "host") or "http://localhost:11434"
+        return os.environ.get("OLLAMA_HOST") or self.dig("ollama", "host") or "http://localhost:11434"
 
     # ---------- system prompt ---------------------------------------------
 
