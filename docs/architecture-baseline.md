@@ -138,3 +138,49 @@ Additional notes for this step:
 - Ruby's `net/http` needed a documented SSL CA-file workaround for
   Linux/WSL2 portability. Python's `urllib.request` builds its default SSL
   context automatically per-request and needed no equivalent workaround.
+
+## Step 05 · The Agent Loop
+
+```
+                     ┌─────────────┐
+              ┌─────▶│    Agent    │  run(): loop until end_turn or
+              │      │             │  max_iterations, then wind-down
+              │      └──────┬──────┘
+              │             │ client.call() → builder.parse_response()
+              │             ▼
+              │   {stop_reason, content[]}   ◀── normalized shape, same
+              │             │                    for all 5 backends
+              │   tool_use? │ end_turn?
+              │     ┌───────┴───────┐
+              │     ▼               ▼
+              │  Registry      extract_text(content)
+              │  .dispatch()   → return final answer
+              │     │
+              │     ▼
+              │  context.add_message("tool_result", ...)
+              └─────┘ (loop back for next client.call)
+```
+
+Every backend implements `parse_response()` (raw response → normalized
+shape above) and, for 4 of 5, a reverse `_assistant_message`/`_assistant_parts`
+(normalized shape → that provider's own wire format, used when replaying a
+stored assistant `Message` whose `.content` is now a list of blocks instead
+of a plain string). Anthropic's wire format already *is* the normalized
+shape, so it skips the reverse step.
+
+Additional notes for this step:
+
+- OpenAI's tool-call `arguments` are a JSON string in both directions
+  (`json.dumps`/`json.loads`); every other backend uses a plain dict.
+- Tool call IDs aren't universal: Anthropic/OpenAI assign one, Ollama/
+  OllamaCloud/Gemini reuse the tool name as the id on both the call and its
+  matching result.
+- A real Ruby-truthiness trap avoided on purpose: Ruby's
+  `@max_output_tokens ? ... : ...` is a nil-check where `0` is truthy; a
+  literal Python `if self.max_output_tokens:` would wrongly treat an
+  explicit `0` as absent. Used `is not None` to match Ruby's actual
+  behavior.
+- `LoopError` is defined (for parity with the Ruby reference) but never
+  raised in either language — the wind-down mechanism replaced it.
+- The wind-down call runs *outside* the counted loop (can't re-trigger
+  itself) and falls back to a deterministic message if it raises `ApiError`.

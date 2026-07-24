@@ -2,7 +2,7 @@
 
 **Ruby reference:** `week1_baseline/ruby/05_agent_loop/`
 **Python port:** `week1_baseline/python/05_agent_loop/`
-**Status:** Planned
+**Status:** Done
 
 ## Goal
 
@@ -127,7 +127,24 @@ request.
 
 ## Outcome
 
-_(fill in after implementation)_
+Matched the plan closely. One thing the plan didn't anticipate: a genuine
+Ruby-truthiness gotcha in `Agent#call_opts` — `@max_output_tokens ? ... :
+...` is a nil-check in Ruby (the value is only ever an int or `nil`, never
+`false`), but `0` is truthy in Ruby, so a literal `if self.max_output_tokens:`
+in Python would have silently dropped an explicit `max_output_tokens: 0`
+setting since `0` is falsy in Python. Used `is not None` instead. Also
+learned mid-implementation that `Agent#run`'s `end_turn` branch never
+appends the final text response back into `context.messages` in Ruby either
+— only tool-calling turns get persisted — so a test assertion I initially
+wrote (expecting the final assistant turn to be stored) was wrong, not the
+port; corrected the test rather than the code. Verified via unit tests on
+all 5 backends' `parse_response`/reverse-conversion methods, a fake-client
+multi-iteration tool-call run (confirming message ordering), all three
+wind-down paths (success, `ApiError` fallback, disabled ceiling), and a
+real run against `api.anthropic.com` with a fake key — reached the live API
+and correctly wrapped its `401` into `ApiError` with the real error body,
+the strongest verification available without genuine credentials. See
+[`python/05_agent_loop/README.md`](../../week1_baseline/python/05_agent_loop/README.md).
 
 ## Ruby build checklist (reference)
 
