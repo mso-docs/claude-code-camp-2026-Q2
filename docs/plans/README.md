@@ -12,6 +12,7 @@ Ruby/Python differences anticipated going in, how it'll be verified, and an
 - [03 · The Prompt Builder](03_prompt_builder.md)
 - [04 · The API Client](04_api_client.md)
 - [05 · The Agent Loop](05_agent_loop.md)
+- [06 · The Logger](06_the_logger.md)
 
 See also the living [architecture diagram](../architecture-baseline.md),
 updated alongside each step.
