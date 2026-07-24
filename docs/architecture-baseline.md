@@ -107,3 +107,34 @@ Additional notes for this step:
   Never triggered in practice — `to_api_payload()` is the only method the
   example calls, and each backend's own `to_payload` invokes `to_messages`
   correctly internally.
+
+## Step 04 · The API Client
+
+```
+┌───────────────┐
+│ PromptBuilder │  to_api_payload() / headers() / url()
+└──────┬────────┘
+       │
+       ▼
+┌───────────────┐   POST (urllib.request, stdlib)   ┌─────────────┐
+│    Client     │ ─────────────────────────────────▶ │  LLM API    │
+│  retry loop   │ ◀───────────────────────────────── │ (any backend)│
+└──────┬────────┘        HTTPError / URLError         └─────────────┘
+       │ raises ApiError after MAX_RETRIES, else returns parsed JSON
+       ▼
+  raw response dict (shape differs per backend — see step README)
+```
+
+No tool-calling loop yet — this step proves the round trip works. That's
+step 05.
+
+Additional notes for this step:
+
+- Ruby's `Net::HTTP` returns a response object for any status code; Python's
+  `urllib.request.urlopen` raises `HTTPError` for non-2xx instead. The retry
+  loop is restructured around `try/except HTTPError` (status-code-driven
+  retry) plus `try/except` on connection-level errors (`URLError` and
+  friends), rather than Ruby's single post-request status check.
+- Ruby's `net/http` needed a documented SSL CA-file workaround for
+  Linux/WSL2 portability. Python's `urllib.request` builds its default SSL
+  context automatically per-request and needed no equivalent workaround.
