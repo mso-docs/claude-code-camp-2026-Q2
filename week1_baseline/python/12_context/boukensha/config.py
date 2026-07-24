@@ -38,6 +38,14 @@ class Config:
     def model(self) -> str:
         return self.dig("tasks", "player", "model") or "claude-haiku-4-5"
 
+    @property
+    def ollama_host(self) -> str:
+        # Not in the Ruby reference (which has no settings.yaml-driven way
+        # to point at a non-default Ollama host either) — added for local
+        # testing against a custom server. run()/repl()'s ollama_host=
+        # kwarg still overrides this when passed explicitly.
+        return self.dig("ollama", "host") or "http://localhost:11434"
+
     # ---------- system prompt ---------------------------------------------
 
     @property

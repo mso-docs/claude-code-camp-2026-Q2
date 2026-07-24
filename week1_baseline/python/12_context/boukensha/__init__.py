@@ -65,7 +65,7 @@ def run(
     model: str | None = None,
     backend: str | None = None,
     api_key: str | None = None,
-    ollama_host: str = "http://localhost:11434",
+    ollama_host: str | None = None,
     log: str | None = None,
     max_output_tokens: int | None = None,
     context_window: int | None = None,
@@ -85,6 +85,12 @@ def run(
     context_window:    overrides the model's known context window (looked up
                        from models.py by default). Rarely needed — mainly for
                        testing against a model models.py doesn't know about.
+
+    ollama_host:       base URL for the "ollama" backend (default
+                       http://localhost:11434). None (default) resolves to
+                       config.ollama_host, settable via settings.yaml's
+                       ollama.host — not in the Ruby reference, added for
+                       testing against a custom local server.
 
     working_dir:      roots all tool calls to this directory (default: the
                        current working directory, resolved fresh on every
@@ -116,6 +122,8 @@ def run(
         model = cfg.model
     if backend is None:
         backend = cfg.provider_type
+    if ollama_host is None:
+        ollama_host = cfg.ollama_host
     if api_key is None:
         env_var = _API_KEY_ENV_VARS.get(backend)
         api_key = os.environ.get(env_var) if env_var else None
@@ -188,7 +196,7 @@ def repl(
     model: str | None = None,
     backend: str | None = None,
     api_key: str | None = None,
-    ollama_host: str = "http://localhost:11434",
+    ollama_host: str | None = None,
     log: str | None = None,
     max_output_tokens: int | None = None,
     context_window: int | None = None,
@@ -218,6 +226,8 @@ def repl(
         model = cfg.model
     if backend is None:
         backend = cfg.provider_type
+    if ollama_host is None:
+        ollama_host = cfg.ollama_host
     if api_key is None:
         env_var = _API_KEY_ENV_VARS.get(backend)
         api_key = os.environ.get(env_var) if env_var else None

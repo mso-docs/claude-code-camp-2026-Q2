@@ -12,6 +12,12 @@ TABLE = {
     "claude-opus-4-8": {"context_window": 200_000},
     "claude-sonnet-4-6": {"context_window": 200_000},
     "claude-haiku-4-5": {"context_window": 200_000},
+    # Local-testing additions (not in the Ruby reference, which is
+    # Anthropic-only here) — without an entry, context_window() falls back
+    # to DEFAULT_CONTEXT_WINDOW (32_000), which would make compaction fire
+    # almost immediately against a real 256k-context local model.
+    "qwen3.6:27b": {"context_window": 256_000},
+    "qwen3.6:35b-a3b": {"context_window": 256_000},
 }
 
 DEFAULT_CONTEXT_WINDOW = 32_000

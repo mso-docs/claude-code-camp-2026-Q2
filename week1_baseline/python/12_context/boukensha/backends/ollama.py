@@ -10,6 +10,20 @@ class Ollama(Base):
             "cost_per_million": {"input": 0.0, "output": 0.0},
             "usage_unit": "local_compute",
         },
+        # Added for local testing against a custom Ollama server — context
+        # windows are estimates (matching this repo's existing qwen3:30b
+        # entry from step 11), not vendor-confirmed; adjust if you know the
+        # real figure for your build.
+        "qwen3.6:27b": {
+            "context_window": 256_000,
+            "cost_per_million": {"input": 0.0, "output": 0.0},
+            "usage_unit": "local_compute",
+        },
+        "qwen3.6:35b-a3b": {
+            "context_window": 256_000,
+            "cost_per_million": {"input": 0.0, "output": 0.0},
+            "usage_unit": "local_compute",
+        },
     }
 
     def __init__(self, *, model: str, host: str = "http://localhost:11434") -> None:
