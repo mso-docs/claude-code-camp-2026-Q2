@@ -37,6 +37,25 @@ lands. Ruby reference: [`week1_baseline/ruby/ITERATIONS.md`](../week1_baseline/r
         └──────────────┘
 ```
 
+## Step 02 · The Tool Registry
+
+```
+        ┌────────────┐  tool(name, desc, params)   ┌─────────────┐
+Agent → │  Registry  │ ───────────────────────────▶ │   Context   │
+(future)│            │  register_tool()             │  tools{}    │
+        └─────┬──────┘                              └─────────────┘
+              │ dispatch(name, args)
+              ▼
+     look up tools[name] → tool.block(**args)
+              │
+              ▼ (name not found)
+     raise UnknownToolError
+```
+
+The agent never calls a tool directly — it will emit a `{name, args}`
+request and the Registry resolves + runs it. No agent loop exists yet to
+produce that request; step 02 still calls `registry.dispatch(...)` by hand.
+
 Notes carried over from the port (not just a translation log — these are the
 places Python's semantics genuinely differ from Ruby's, see each step's
 README for detail):
@@ -45,3 +64,9 @@ README for detail):
   string type, so the dual lookups in Ruby's `dig`/`fetch` collapse away.
 - Ruby `Struct` → Python `@dataclass` for `Tool`/`Message`; `Context` stays a
   plain class in both languages (it has behavior, not just data).
+- Ruby's `registry.tool(...) do |args| end` (block-as-argument) → Python's
+  `@registry.tool(...)` decorator — same "register this callable" shape,
+  different syntax for passing a function into a method call.
+- Ruby's `dispatch` must convert JSON's string-keyed args to symbol keys
+  before calling a block with keyword args; Python keyword args already
+  accept string keys, so that translation step doesn't exist in the port.
