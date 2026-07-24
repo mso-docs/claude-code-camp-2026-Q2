@@ -224,3 +224,40 @@ Additional notes for this step:
   constructed inside `__init__`, not as `logger=Logger()` in the
   signature — the latter would share one `Logger` (and file) across every
   `Agent` that omits it.
+
+## Step 07 · The `boukensha.run` DSL
+
+```
+caller ──▶ boukensha.run(task=, block=configure)
+              │
+              ├─ state.config()  ──▶  tasks.player.{provider,model,system,...}
+              │                       (defaults; any kwarg overrides)
+              ├─ Context + Registry
+              ├─ block(RunDSL(registry))   ◀── caller's tool registrations
+              │
+              ├─ backend / PromptBuilder / Client / Logger / Agent
+              │  (exactly the manual wiring from steps 02-06, assembled here)
+              │
+              ├─ ctx.add_message("user", task)
+              └─ agent.run()  ──▶  return final text
+                    finally: logger.close()   (logger may be None if setup
+                                                failed before it was built)
+```
+
+One call replaces the ~20 lines of manual plumbing every prior step
+required. Additional notes for this step:
+
+- Ruby's `do...end` block with `instance_eval` (rebinding `self` to
+  `RunDSL`) has no Python equivalent — `run()` takes a `block` callable
+  that receives the `RunDSL` instance directly instead. Same shape
+  ("describe tools, hand them to run"), different spelling.
+- `run()` deliberately reuses the process-wide `state.config()` singleton
+  rather than constructing a fresh `Config()`, matching Ruby's
+  `Boukensha.config` — the same instance `Logger`'s default session
+  directory reads from.
+- `Logger` gains `turn()` and `subscribe()` in this step, unused by it —
+  forward-looking for a later TUI step's live progress display.
+- Two dead-code items (`Config.mud_*`, `errors.LoopError`) that were
+  dropped in step 06's Ruby snapshot are back in step 07's — snapshot
+  drift between the per-step reference directories, not a design change.
+  Restored to match, still unused.

@@ -2,7 +2,7 @@
 
 **Ruby reference:** `week1_baseline/ruby/07_the_run_dsl/`
 **Python port:** `week1_baseline/python/07_the_run_dsl/`
-**Status:** Planned
+**Status:** Done
 
 ## Goal
 
@@ -131,4 +131,14 @@ symbol-vs-string duality collapse we've noted in every step since 00.
 
 ## Outcome
 
-_(fill in after implementation)_
+Matched the plan on every anticipated design decision. All verification-plan
+items passed: `RunDSL.tool` delegation, `run()`'s defaulting logic against a
+real scratch `settings.yaml` (model pulled from config when omitted,
+explicit override wins), an unsupported model failing cleanly before
+`Logger` exists with no secondary error from the `finally`, `subscribe()`
+receiving pre-merge event dicts, and a real request against
+`api.anthropic.com` with a fake key that both hit the live API (401, as
+expected) and correctly wrote all 5 snapshot fields
+(`task`/`max_iterations`/`max_output_tokens`/`model`/`provider`) to the
+session's `session_start` line. See
+[`python/07_the_run_dsl/README.md`](../../week1_baseline/python/07_the_run_dsl/README.md).
