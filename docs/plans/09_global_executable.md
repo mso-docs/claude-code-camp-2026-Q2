@@ -2,7 +2,7 @@
 
 **Ruby reference:** `week1_baseline/ruby/09_global_executable/`
 **Python port:** `week1_baseline/python/09_global_executable/`
-**Status:** Planned
+**Status:** Done
 
 ## Goal
 
@@ -129,4 +129,22 @@ the same role Ruby's `bin/boukensha` shebang script plays by hand.
 
 ## Outcome
 
-_(fill in after implementation)_
+Matched the plan, plus one thing discovered only by actually building the
+wheel: hatchling's `[tool.hatch.build.targets.wheel] include = [...]`
+silently did *not* put `boukensha_loader.py` (a standalone top-level
+module, not part of the `boukensha` package) into the built wheel —
+`packages` only picks up directories. Caught by inspecting the wheel's
+actual contents (`python3 -m zipfile -l ...`) rather than trusting that
+the config "looked right," which it did. Fixed with `force-include`,
+re-verified by inspecting the wheel again.
+
+Every verification-plan item passed, and pushed further than planned: got
+a real console-script `boukensha` installed via `uv tool install .` and
+exercised it as an actual global command — bundled default, a
+`BOUKENSHA_PATH` override to a different step, the no-REPL friendly
+abort, the invalid-path friendly abort, and `BOUKENSHA_DEBUG=1`'s
+diagnostic line — not just calling the loader's functions directly.
+Uninstalled the tool and removed `dist/` afterward (and added `**/dist/`
+to `.gitignore`) so the verification pass didn't leave global state
+behind on this machine. See
+[`python/09_global_executable/README.md`](../../week1_baseline/python/09_global_executable/README.md).

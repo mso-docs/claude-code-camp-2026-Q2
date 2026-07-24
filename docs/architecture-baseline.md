@@ -309,3 +309,43 @@ Additional notes for this step:
 - EOF handling needed `sys.stdin.readline()` (returns `""` at true EOF)
   rather than `input()` (raises `EOFError`), to match Ruby's
   `$stdin.gets` → `nil` pattern.
+
+## Step 09 · Global Executable
+
+```
+$PATH  ──▶  boukensha  (console-script shim, from [project.scripts])
+                │
+                ▼
+        boukensha_loader.main() → load_and_start_repl()
+                │
+                ▼ resolve():
+     1. $BOUKENSHA_PATH env var  (explicit override)
+     2. ~/.boukensharc file      (persistent default, one path)
+     3. bundled step (this one)  (fallback)
+                │
+                ▼
+     sys.path.insert(0, step_dir); sys.modules.pop("boukensha", None)
+     boukensha = import_module("boukensha")
+                │
+        has `repl`?  ──no──▶  friendly abort: "run its examples directly"
+                │yes
+                ▼
+          boukensha.repl()
+```
+
+Packaging plumbing, not agent-architecture logic — the only genuinely new
+code is the loader's 3-tier resolution and the `pyproject.toml`
+console-script entry point. Notes:
+
+- This step's Ruby snapshot regresses three things step 08 added (friendly
+  `401` message, CWD `.boukensha/` config tier, richer REPL banner) with
+  no explanation and no stated scope touching those files — the Python
+  port keeps step 08's versions rather than replicating the regression.
+- `sys.modules.pop("boukensha", None)` before each import is what makes
+  switching between step directories in one process actually work —
+  without it, a second `import boukensha` would silently return whatever
+  was cached from the first path.
+- Verified against a real built-and-installed wheel (`uv build` +
+  `uv tool install .`), not just library-level calls — including the
+  hatchling packaging gotcha where a standalone top-level module needed
+  `force-include`, not `include`, to actually end up in the wheel.

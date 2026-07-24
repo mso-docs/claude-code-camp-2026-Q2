@@ -1,0 +1,24 @@
+[project]
+name = "boukensha"
+version = "0.9.0"
+description = "BOUKENSHA — a tiny teaching framework for coding harnesses. Set BOUKENSHA_PATH to load a specific lesson step, or run with defaults to use the bundled release."
+authors = [{ name = "Andrew Brown", email = "andrew@exampro.co" }]
+license = "MIT"
+requires-python = ">=3.12"
+dependencies = [
+    "python-dotenv",
+    "pyyaml",
+]
+
+[project.scripts]
+boukensha = "boukensha_loader:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["boukensha"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"boukensha_loader.py" = "boukensha_loader.py"
