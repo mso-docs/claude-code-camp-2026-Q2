@@ -2,7 +2,7 @@
 
 **Ruby reference:** `week1_baseline/ruby/06_the_logger/`
 **Python port:** `week1_baseline/python/06_the_logger/`
-**Status:** Planned
+**Status:** Done
 
 ## Goal
 
@@ -65,6 +65,14 @@ that didn't pass its own logger would share that one instance and file.
 Using `logger: Logger | None = None` and constructing
 `self.logger = logger if logger is not None else Logger()` inside the
 method body instead — the standard fix for this well-known Python trap.
+
+**All of step 05's console `puts` output is gone, replaced entirely by the
+JSONL logger.** Confirmed by grepping `06_the_logger/lib/boukensha/agent.rb`
+for `puts` — zero matches. Step 05's `[iteration N/M]`, `tool call →`, and
+`tool result →` console lines don't just get logger calls added alongside
+them; they're deleted outright. Missed this on first read and had to fix it
+after writing the initial port — `Agent` in this step produces almost no
+stdout of its own; the file log is now the only detailed record of a run.
 
 **New in this step: tool-call errors no longer crash the agent.** Step 05's
 `handle_tool_calls` let a tool exception propagate straight up through
@@ -133,4 +141,21 @@ but not faithful) behavior.
 
 ## Outcome
 
-_(fill in after implementation)_
+Matched the plan on every anticipated design decision (state module,
+default-argument gotcha, metadata filtering, `first_integer` bail-on-first-
+bad-value, the OpenAI provider-name quirk). One thing the plan missed and
+had to be caught mid-implementation: I initially carried step 05's console
+`print()` calls forward into the logging-enriched `Agent`, assuming logging
+was purely additive. Re-grepping the actual `06_the_logger/lib/boukensha/agent.rb`
+for `puts` turned up zero matches — step 06 deletes all of step 05's console
+output outright, relying on the JSONL file as the sole detailed record.
+Fixed before verification, and added as an explicit design-decision note
+so it doesn't get missed again in a later step. All verification-plan items
+passed: session file structure, debug-gated `raw()`, response metadata
+filtering (explicit `null` vs. dropped keys), the `OpenAI`→`open_ai`
+provider-name mismatch, a raising tool surviving the loop and getting
+logged with `ok: false`, two `Agent`s without explicit `logger=` getting
+distinct instances/files, and a real run against `api.anthropic.com` with
+a fake key that both hit the live API (401, as expected) and correctly
+wrote `session_start`/`iteration`/`prompt` to its session log before
+failing. See [`python/06_the_logger/README.md`](../../week1_baseline/python/06_the_logger/README.md).

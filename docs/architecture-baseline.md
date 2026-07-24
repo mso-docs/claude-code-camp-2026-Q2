@@ -184,3 +184,43 @@ Additional notes for this step:
   raised in either language — the wind-down mechanism replaced it.
 - The wind-down call runs *outside* the counted loop (can't re-trigger
   itself) and falls back to a deterministic message if it raises `ApiError`.
+
+## Step 06 · The Logger
+
+```
+┌─────────────┐  session_start/iteration/prompt/tool_call/    ┌──────────────┐
+│    Agent    │  tool_result/response/limit_reached/turn_end  │    Logger    │
+│             │ ─────────────────────────────────────────────▶│              │
+└─────────────┘                                                └──────┬───────┘
+                                                                        │ one JSON
+                                                                        │ object/line
+                                                                        ▼
+                                                     .boukensha/sessions/<id>.jsonl
+
+┌──────────────┐   config() / is_debug() / is_quiet()   ┌──────────────┐
+│ boukensha.   │◀─────────────────────────────────────── │   Logger     │
+│ state        │   (memoized Config singleton; debug     │ (default dir,│
+│ (new module) │    flag gates the raw() event)          │  raw gating) │
+└──────────────┘                                          └──────────────┘
+```
+
+`state.py` exists only to break a circular import `__init__.py` would
+otherwise have with `logger.py` (see the step's README) — Ruby's
+single-file module doesn't have this problem because `require` doesn't
+evaluate cross-references until call time.
+
+Additional notes for this step:
+
+- All of step 05's console `puts`/`print` output is gone from `Agent` in
+  this step — replaced entirely by the JSONL log, not supplemented by it.
+- New behavior, not just a port: a raised exception from a tool no longer
+  crashes the agent — it becomes an `"ERROR: ..."` tool result fed back to
+  the model, logged with `ok: false`.
+- A real quirk carried forward: the logged `provider` field is derived
+  from the backend's class name, and `OpenAI` → `open_ai` doesn't match
+  the actual `settings.yaml` key `openai` — every other backend's derived
+  name does match its config key.
+- Python's default-argument trap avoided: `Agent`'s `logger` default is
+  constructed inside `__init__`, not as `logger=Logger()` in the
+  signature — the latter would share one `Logger` (and file) across every
+  `Agent` that omits it.
