@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+cd "$(dirname "$0")/../10_standard_tool_library"
+uv run python examples/demo.py

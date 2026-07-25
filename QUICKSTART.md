@@ -1,0 +1,138 @@
+# QUICKSTART — running the Python port (step 12)
+
+Everything below assumes you're in the repo root:
+`/home/desktop/code/claude-code-camp-2026-Q2`
+
+If you've already set the below up, you can access the Boukensha agent using the commands below:
+
+Start the Docker container (even if you have Docker Desktop/Engine running):
+```bash
+cd week0_explore/infrastructure docker compose up --build
+```
+
+Run the Boukensha executable:
+```bash
+export BOUKENSHA_DIR="$(pwd)/.boukensha"
+./week1_baseline/python/bin/12_context           # full textual TUI
+# or
+./week1_baseline/python/bin/12_context --no-tui  # plain terminal REPL
+```
+
+And here is how you open the Log Viewer (use another terminal tab):
+
+```bash
+cd week1_baseline/ruby/log_viz
+LOG_VIZ_SESSIONS_DIR="$(pwd)/../../../.boukensha/sessions" bundle exec ruby bin/log_viz
+
+```
+
+## 1. Set your API key
+
+A config directory already exists at `.boukensha/` in the repo root
+(that's the designated spot — `Config` looks for `.boukensha/` in the
+current working directory before falling back to `~/.boukensha`).
+
+Edit `.boukensha/.env` and put your real Anthropic key in:
+
+```
+ANTHROPIC_API_KEY=sk-ant-your-real-key-here
+```
+
+`.env` is gitignored (matches anywhere in the tree), so this is safe to
+edit in place.
+
+## 2. (Optional) settings.yaml
+
+Only needed if you want to override the defaults
+(`claude-haiku-4-5` on `anthropic`, 25 max iterations, 60,000 max turn
+tokens). `.boukensha/settings.yaml`:
+
+```yaml
+tasks:
+  player:
+    provider: anthropic       # swap to "ollama" to use your local server (no API key needed)
+    model: claude-sonnet-4-6  # swap to "qwen3.6:27b" or "qwen3.6:35b-a3b" (both whitelisted
+                               # in boukensha/backends/ollama.py + boukensha/models.py)
+
+agent:
+  max_iterations: 25
+  max_turn_tokens: 60000
+
+# Only read when provider: ollama above. Uncomment and fill in your server:
+# ollama:
+#   host: "http://your-dns-name:port"
+
+# Optional — connect to a CircleMUD server and unlock gameplay tools.
+# Without this block, MUD tools simply don't register.
+# mud:
+#   host: localhost
+#   port: 4000
+#   username: yourcharacter
+#   password: yourpassword
+```
+
+This file is **not** gitignored — delete it or `git rm` it if you'd
+rather stick with defaults and not have it tracked.
+
+### Using your local Ollama server instead of Anthropic
+
+No API key needed — just flip `provider`/`model`/`ollama.host` in
+`settings.yaml` as shown above. This required two small additions beyond
+the strict Ruby port (documented inline in the code, both untracked by
+the step-12 commit):
+
+- `qwen3.6:27b` and `qwen3.6:35b-a3b` added to `Ollama.MODELS`
+  (`boukensha/backends/ollama.py`) — models not in this table are
+  rejected outright.
+- Both also added to `boukensha/models.py`'s `TABLE` (which the Ruby
+  reference keeps Anthropic-only) — without this, `Context`'s
+  `context_window` would fall back to a 32,000-token default and
+  auto-compaction would fire almost immediately against a real
+  256k-context local model.
+- `Config.ollama_host` (reads `ollama.host` from `settings.yaml`) is new
+  too — the Ruby reference has no settings.yaml-driven way to point at a
+  non-default Ollama host at all.
+
+If you're running a different local model, add it to both `MODELS`
+tables (context window + whatever else you want tracked) the same way.
+
+## 3. Run it
+
+`bin/12_context` uses the step-12 Python environment without changing the
+directory where you launched it. Launching from the repo root therefore keeps
+the agent's file and shell tools rooted at the repo and lets them access the
+memory files under `.boukensha/memory/`. Exporting `BOUKENSHA_DIR` explicitly
+is still recommended so config resolution remains unambiguous:
+
+```bash
+export BOUKENSHA_DIR="$(pwd)/.boukensha"
+
+./week1_baseline/python/bin/12_context           # full textual TUI
+./week1_baseline/python/bin/12_context --no-tui  # plain terminal REPL
+```
+
+(First run does `uv sync` automatically and creates a `.venv` under
+`week1_baseline/python/12_context/`.)
+
+## Things worth knowing once you're in
+
+- **Tools**: file-system tools (`pwd`, `read_file`, `write_file`,
+  `delete_file`) and a shell (`run_command`) are rooted at whatever
+  directory you *launch* the command from — run it from wherever you
+  want the agent operating.
+- **MUD play**: only active if `mud:` is configured in `settings.yaml`
+  (see above).
+- **`/compact`**: manually drops old conversation history to free up
+  context space. It also compacts automatically once usage crosses 85%
+  — watch the color-coded `ctx` indicator in the status bar
+  (grey → yellow at 70% → red at 85%, with a `⚠` at 85%+).
+- **`/clear`**: wipes conversation history entirely (tools stay
+  registered).
+- **Keyboard shortcuts (TUI only)**: `Esc` interrupts a running turn,
+  `Ctrl-C`/`Ctrl-D` quits, `Ctrl-L` clears history, `PageUp`/`PageDown`
+  scroll the conversation.
+
+## Alternative to exporting BOUKENSHA_DIR every time
+
+When you always launch from the repo root, its `.boukensha/` directory is
+discovered automatically and the export can be omitted.

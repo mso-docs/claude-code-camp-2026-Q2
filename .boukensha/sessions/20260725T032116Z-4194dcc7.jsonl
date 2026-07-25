@@ -1,0 +1,1 @@
+{"phase": "session_start", "max_iterations": 25, "max_turn_tokens": 60000, "max_output_tokens": 1024, "context_window": 256000, "model": "qwen3.6:35b-a3b", "provider": "ollama", "session_id": "20260725T032116Z-4194dcc7", "at": "2026-07-24T23:21:16-04:00"}
