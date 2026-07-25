@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import secrets
 from datetime import datetime, timezone
 from pathlib import Path
@@ -8,6 +9,33 @@ from pathlib import Path
 from . import state
 
 DEFAULT_SESSION_DIR = "sessions"
+
+# Session logs get committed (per course requirements), so secret- and
+# infra-shaped content must never reach disk regardless of which tool
+# produced it — read_file refusing .env is the first line of defense, this
+# is the second for anything else that slips through a tool result
+# (run_command cat'ing a dotfile, an `env` dump, etc). Covers both true
+# secrets (API keys, passwords, tokens) and identifying infra details
+# (internal hostnames/URLs, e.g. a private OLLAMA_HOST) that shouldn't end
+# up in a repo shared with an instructor/classmates even though they aren't
+# credentials per se.
+_SECRET_KV_RE = re.compile(
+    r"(?im)\b((?:[A-Z0-9]+_)*(?:API[_-]?KEY|SECRET|TOKEN|PASSWORD|PASSWD"
+    r"|HOST|URL|URI|ENDPOINT|DSN)(?:_[A-Z0-9]+)*)(\s*[:=]\s*)(\S+)"
+)
+_SECRET_LITERAL_RE = re.compile(r"\bsk-[A-Za-z0-9_-]{6,}\b")
+
+
+def _redact(value):
+    if isinstance(value, str):
+        value = _SECRET_KV_RE.sub(lambda m: f"{m.group(1)}{m.group(2)}[REDACTED]", value)
+        value = _SECRET_LITERAL_RE.sub("[REDACTED]", value)
+        return value
+    if isinstance(value, dict):
+        return {k: _redact(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_redact(v) for v in value]
+    return value
 
 
 class Logger:
@@ -96,6 +124,11 @@ class Logger:
         return Path(state.config().dir) / DEFAULT_SESSION_DIR
 
     def _write_log(self, event: dict) -> None:
+        # Redact before this event is ever written to disk or handed to a
+        # subscriber (Tui) — a session log gets committed, and a live
+        # display is still a leak. See _redact for what this catches.
+        event = _redact(event)
+
         # `event` itself is deliberately left un-merged below — subscribers
         # get the original per-phase dict, not session_id/at added on top.
         full_event = {

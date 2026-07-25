@@ -80,9 +80,9 @@ def register(registry, *, name: str, password: str, host: str = "localhost", por
         return session.read_until_prompt()
 
     def guard():
-        """Return an error string if the session is not open so the agent
-        can decide whether to call mud_connect first."""
-        if not session.is_open():
+        """Return an error string if the session is not open and logged in
+        so the agent can decide whether to call mud_connect first."""
+        if not session.is_open() or not session.is_logged_in():
             return "error: not connected — call mud_connect first"
         return None
 
@@ -98,10 +98,11 @@ def register(registry, *, name: str, password: str, host: str = "localhost", por
         parameters={},
     )
     def mud_connect():
-        if session.is_open():
+        if session.is_open() and session.is_logged_in():
             return f"already connected to {session.host}:{session.port}"
         try:
-            session.open()
+            if not session.is_open():
+                session.open()
             welcome = session.login(name, password)
             return f"connected to {session.host}:{session.port}\n{welcome}"
         except SessionError as e:
@@ -116,7 +117,11 @@ def register(registry, *, name: str, password: str, host: str = "localhost", por
 
     @registry.tool("mud_status", description="Return whether the MUD session is currently connected.", parameters={})
     def mud_status():
-        return f"connected to {session.host}:{session.port}" if session.is_open() else "disconnected"
+        if session.is_open() and session.is_logged_in():
+            return f"connected to {session.host}:{session.port}"
+        if session.is_open():
+            return f"socket open to {session.host}:{session.port} but not logged in — call mud_connect"
+        return "disconnected"
 
     # ── Perception ──────────────────────────────────────────────────────
 

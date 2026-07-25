@@ -75,6 +75,8 @@ def register(registry, *, working_dir: str) -> None:
         target = resolve(path)
         if target.startswith("error:"):
             return target
+        if Path(target).name == ".env" or Path(target).suffix == ".env":
+            return oops(f"refusing to read '{path}' — .env files may contain secrets")
         if not os.path.isfile(target):
             return oops(f"'{path}' is not a file")
         try:

@@ -3,6 +3,29 @@
 Everything below assumes you're in the repo root:
 `/home/desktop/code/claude-code-camp-2026-Q2`
 
+If you've already set the below up, you can access the Boukensha agent using the commands below:
+
+Start the Docker container (even if you have Docker Desktop/Engine running):
+```bash
+cd week0_explore/infrastructure docker compose up --build
+```
+
+Run the Boukensha executable:
+```bash
+export BOUKENSHA_DIR="$(pwd)/.boukensha"
+./week1_baseline/python/bin/12_context           # full textual TUI
+# or
+./week1_baseline/python/bin/12_context --no-tui  # plain terminal REPL
+```
+
+And here is how you open the Log Viewer (use another terminal tab):
+
+```bash
+cd week1_baseline/ruby/log_viz
+LOG_VIZ_SESSIONS_DIR="$(pwd)/../../../.boukensha/sessions" bundle exec ruby bin/log_viz
+
+```
+
 ## 1. Set your API key
 
 A config directory already exists at `.boukensha/` in the repo root

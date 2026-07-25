@@ -55,6 +55,7 @@ class Session:
         self._cond = threading.Condition()
         self._closed = False
         self._last_recv_at: float | None = None
+        self._logged_in = False
 
     def open(self) -> "Session":
         if self._socket:
@@ -70,10 +71,14 @@ class Session:
     def is_open(self) -> bool:
         return self._socket is not None and not self._closed
 
+    def is_logged_in(self) -> bool:
+        return self._logged_in
+
     def close(self) -> None:
         if self._closed:
             return
         self._closed = True
+        self._logged_in = False
         try:
             if self._socket:
                 self._socket.close()
@@ -182,8 +187,26 @@ class Session:
         # Enter Username
         self.send_command(username)
 
-        # Expect Password Prompt
-        self.read_until(re.compile(r"Password", re.IGNORECASE))
+        # Expect Password Prompt — but the server takes this same fork to ask
+        # "Did I get that right, <name> (Y/N)?" when it does NOT recognize
+        # username as an existing player, which is otherwise indistinguishable
+        # from a real prompt here: it also contains the substring "password"
+        # a few lines later ("Give me a password for <name>"), so a regex
+        # that only looks for "Password" would silently follow the
+        # new-character path and eventually time out waiting for a
+        # "Welcome/Reconnecting/Wrong password" line that never arrives —
+        # leaving the socket parked mid-prompt for the caller to stumble
+        # into. Detect the confirmation prompt explicitly and bail instead of
+        # ever agreeing to create a new character with this name.
+        after_name = self.read_until(
+            re.compile(r"Password|Did I get that right", re.IGNORECASE)
+        )
+        if re.search(r"Did I get that right", after_name, re.IGNORECASE):
+            self.send_command("n")  # decline — do not create a new character
+            raise LoginError(
+                f"server did not recognize {username!r} as an existing player "
+                "(offered to create a new character instead) — declined"
+            )
 
         # Enter Password
         self.send_command(password)
@@ -198,6 +221,7 @@ class Session:
             self.read_until_quiet()
         elif re.search(r"Wrong password", output, re.IGNORECASE):
             raise LoginError("wrong password")
+        self._logged_in = True
         return output
 
     # ----- internals -----

@@ -26,6 +26,7 @@ import threading
 import time
 
 from rich.markup import escape
+from rich.text import Text
 from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
@@ -50,6 +51,17 @@ CTX_ALERT_PCT = 85
 def _fmt_tokens(n: int) -> str:
     n = int(n or 0)
     return f"{n / 1000.0:.1f}k" if n >= 1000 else str(n)
+
+
+def _truncate(s: str, limit: int = 280) -> str:
+    s = str(s or "").strip()
+    return s if len(s) <= limit else s[: limit - 1].rstrip() + "…"
+
+
+def _fmt_args(args: dict) -> str:
+    if not args:
+        return ""
+    return ", ".join(f"{k}={v!r}" for k, v in args.items())
 
 
 class Tui(App):
@@ -263,12 +275,36 @@ class Tui(App):
             self._live["iteration"] = int(event.get("n") or 0)
             self._live["current_action"] = "Thinking…"
 
+        elif phase == "plan":
+            text = _truncate(event.get("text"), 500)
+            if text:
+                self.query_one("#conversation", RichLog).write(text)
+
+        elif phase == "reasoning":
+            if event.get("redacted"):
+                line = Text("  ⋯ (reasoning redacted)", style="dim italic")
+            else:
+                text = _truncate(event.get("text"), 300)
+                if not text:
+                    return
+                line = Text(f"  ⋯ {text}", style="dim italic")
+            self.query_one("#conversation", RichLog).write(line)
+
         elif phase == "tool_call":
-            self._live["current_action"] = f"Calling tool: {event.get('name')}"
+            name = event.get("name")
+            self._live["current_action"] = f"Calling tool: {name}"
             self._live["tool_call_count"] += 1
+            args = _fmt_args(event.get("args") or {})
+            line = Text(f"  → {name}({args})", style="dim cyan")
+            self.query_one("#conversation", RichLog).write(line)
 
         elif phase == "tool_result":
             self._live["current_action"] = "Awaiting result…"
+            ok = event.get("ok", True)
+            result = _truncate(event.get("result"), 280)
+            style = "dim" if ok else "bold red"
+            line = Text(f"  ← {result}", style=style)
+            self.query_one("#conversation", RichLog).write(line)
 
         elif phase == "response":
             usage = event.get("usage")
