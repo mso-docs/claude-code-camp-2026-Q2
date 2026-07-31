@@ -17,6 +17,7 @@ from .repl import Repl
 from .run_dsl import RunDSL
 from .state import config, is_debug, set_debug
 from .tool import Tool
+from . import tracing
 # Aliased: run()/repl() have a `mud=` keyword parameter, which would shadow
 # a bare `from .tools import mud` at call time. Ruby doesn't hit this
 # (Tools::Mud, capitalized, is a different identifier from a local `mud`
@@ -115,6 +116,7 @@ def run(
                        settings.yaml. Pass mud=False to disable entirely.
     """
     cfg = config()  # loads .env; populates os.environ
+    tracing.configure()  # no-op unless OTEL_EXPORTER_OTLP_ENDPOINT is set
 
     if system is None:
         system = cfg.system_prompt
@@ -219,6 +221,7 @@ def repl(
     it away would be a change this step's Ruby source didn't make.
     """
     cfg = config()  # loads .env; populates os.environ
+    tracing.configure()  # no-op unless OTEL_EXPORTER_OTLP_ENDPOINT is set
 
     if system is None:
         system = cfg.system_prompt
@@ -328,6 +331,7 @@ __all__ = [
     "backends",
     "models",
     "state",
+    "tracing",
     "config",
     "set_debug",
     "is_debug",

@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import threading
 
+from opentelemetry import trace
+
 from .errors import ApiError, TurnInterrupted
 from .logger import Logger
+from .tracing import tracer
 
 # Default iteration ceiling. The *enforced* value comes from the
 # max_iterations constructor arg (sourced from Config at the run/repl path),
@@ -58,44 +61,54 @@ class Agent:
         self.context.reset_turn_tokens()
         self._compact_if_needed()
 
-        while True:
-            # Cooperative cancellation (Tui's Esc key): checked at the top of
-            # every iteration, before starting the next round-trip. Not
-            # instant mid-request — an in-flight HTTP call still completes —
-            # but Python has no safe way to do better than that from outside
-            # a running thread.
-            if self.cancel_event is not None and self.cancel_event.is_set():
-                raise TurnInterrupted("turn cancelled")
+        # One span per turn (a repl round-trip from user input to the agent's
+        # reply), parenting every iteration/tool/LLM-call span below it — this
+        # is the unit a trace viewer should let you expand to see the whole
+        # decision path for a single player action.
+        with tracer.start_as_current_span("agent.turn"):
+            while True:
+                # Cooperative cancellation (Tui's Esc key): checked at the top of
+                # every iteration, before starting the next round-trip. Not
+                # instant mid-request — an in-flight HTTP call still completes —
+                # but Python has no safe way to do better than that from outside
+                # a running thread.
+                if self.cancel_event is not None and self.cancel_event.is_set():
+                    raise TurnInterrupted("turn cancelled")
 
-            # Two independent ceilings; stop at whichever trips first. Limits
-            # are *trigger thresholds*, not hard caps: when one is reached we
-            # stop starting new work iterations and make exactly one terminal
-            # wind-down call (counted in tokens, but not as another iteration).
-            if self._iteration_limit_reached():
-                self.logger.limit_reached(kind="max_iterations", n=self.iteration, max=self.max_iterations)
-                return self._wrap_up("max_iterations")
-            if self._token_limit_reached():
-                self.logger.limit_reached(kind="max_tokens", n=self.context.turn_tokens, max=self.max_turn_tokens)
-                return self._wrap_up("max_tokens")
+                # Two independent ceilings; stop at whichever trips first. Limits
+                # are *trigger thresholds*, not hard caps: when one is reached we
+                # stop starting new work iterations and make exactly one terminal
+                # wind-down call (counted in tokens, but not as another iteration).
+                if self._iteration_limit_reached():
+                    self.logger.limit_reached(kind="max_iterations", n=self.iteration, max=self.max_iterations)
+                    return self._wrap_up("max_iterations")
+                if self._token_limit_reached():
+                    self.logger.limit_reached(kind="max_tokens", n=self.context.turn_tokens, max=self.max_turn_tokens)
+                    return self._wrap_up("max_tokens")
 
-            self.iteration += 1
-            self.logger.iteration(n=self.iteration, max=self.max_iterations)
-            self.logger.prompt(messages=self.context.messages, tools=self.context.tools, context_window=self.context.context_window)
+                self.iteration += 1
+                with tracer.start_as_current_span(
+                    "agent.iteration", attributes={"iteration": self.iteration}
+                ):
+                    self.logger.iteration(n=self.iteration, max=self.max_iterations)
+                    self.logger.prompt(
+                        messages=self.context.messages, tools=self.context.tools, context_window=self.context.context_window
+                    )
 
-            response = self.client.call(**self._call_opts())
-            self.logger.raw(data=response)
-            parsed = self.builder.parse_response(response)
-            self._record_usage(response)
-            self._log_reasoning(parsed["content"])
+                    response = self.client.call(**self._call_opts())
+                    self.logger.raw(data=response)
+                    parsed = self.builder.parse_response(response)
+                    self._record_usage(response)
+                    self._log_reasoning(parsed["content"])
 
-            if parsed["stop_reason"] == "tool_use":
-                self._handle_tool_calls(parsed["content"], response)
-            else:
-                text = self._extract_text(parsed["content"])
-                self.logger.response(text=text, usage=response.get("usage"), stop_reason=parsed["stop_reason"])
-                self.logger.turn_end(reason="completed", iterations=self.iteration, tokens=self.context.turn_tokens)
-                self.context.add_message("assistant", text)
-                return text
+                    if parsed["stop_reason"] == "tool_use":
+                        self._handle_tool_calls(parsed["content"], response)
+                    else:
+                        text = self._extract_text(parsed["content"])
+                        self.logger.response(text=text, usage=response.get("usage"), stop_reason=parsed["stop_reason"])
+                        self.logger.turn_end(reason="completed", iterations=self.iteration, tokens=self.context.turn_tokens)
+                        self.context.add_message("assistant", text)
+                        return text
 
     # ---------- private ---------------------------------------------------
 
@@ -200,11 +213,19 @@ class Agent:
             use_id = block["id"]
 
             self.logger.tool_call(name=name, args=args)
-            try:
-                result = self.registry.dispatch(name, args)
-                self.logger.tool_result(name=name, result=result, ok=True)
-            except Exception as e:
-                result = f"ERROR: {type(e).__name__}: {e}"
-                self.logger.tool_result(name=name, result=result, ok=False, error=str(e))
+            with tracer.start_as_current_span(f"tool.{name}", attributes={"tool.name": name}) as span:
+                try:
+                    result = self.registry.dispatch(name, args)
+                    self.logger.tool_result(name=name, result=result, ok=True)
+                except Exception as e:
+                    result = f"ERROR: {type(e).__name__}: {e}"
+                    self.logger.tool_result(name=name, result=result, ok=False, error=str(e))
+                    # Caught here (a bad tool call shouldn't kill the turn), so
+                    # the span needs to be told explicitly — a swallowed
+                    # exception never reaches start_as_current_span's own
+                    # exception handling since nothing propagates out of this
+                    # `with` block.
+                    span.record_exception(e)
+                    span.set_status(trace.Status(trace.StatusCode.ERROR, str(e)))
 
             self.context.add_message("tool_result", str(result), tool_use_id=use_id)

@@ -6,6 +6,9 @@ dependencies = [
     "python-dotenv",
     "pyyaml",
     "textual",
+    "opentelemetry-api",
+    "opentelemetry-sdk",
+    "opentelemetry-exporter-otlp-proto-http",
 ]
 
 [tool.uv]
