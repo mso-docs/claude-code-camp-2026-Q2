@@ -9,10 +9,10 @@ rather than adding a new capability.
 Python `12_context` agent (`Agent`, `Client`, `Registry.dispatch`), and the
 Ruby `log_viz` session dashboard (`Session`, its Sinatra `App`, and the
 transcript template).
-**Status:** Built, smoke-tested, and confirmed working end-to-end: traces
-visible in both Jaeger and Grafana Tempo, and a Story view alternative to
-`log_viz`'s transcript running side by side with it against real session
-data.
+**Status:** Complete — built, smoke-tested, confirmed working end-to-end,
+and the lesson's own comparison has been run and judged (see Outcome).
+Both visualization experiments are being kept as diagnostic tooling, not
+adopted as the primary way to read a session.
 **Prompted by:** a lesson exercise in two parts — (1) stand up an OTel
 stack, run the agent against it, and judge whether Jaeger or Grafana Tempo
 communicates the agent's decision-making better than the existing
@@ -161,14 +161,15 @@ on the same real session data, per the lesson's second half.
   confirmed the transcript route still renders unchanged after factoring
   the shared header into `_header.erb` (same message/tool-block count as
   before the refactor).
-- **Still open:** the lesson's own qualitative calls — whether either
-  trace view (Jaeger/Tempo) beats the transcript for understanding *why*
-  the agent did something rather than *how long* it took, and separately
-  whether the Story view's collapsed-by-default reasoning/tool-call
-  presentation actually reads better than the transcript's flat,
-  always-expanded one or just hides detail that mattered. Both
-  deliberately left as judgment calls for whoever runs the comparison
-  rather than asserted here.
+- ~~Qualitative comparison~~ — done, judged firsthand against the same
+  real session: Jaeger's timeline was reviewed, and Tempo's rendering of
+  the identical trace was reviewed alongside it — verdict was that both
+  are dense and hard to follow, with the UI lacking color-coding or other
+  visual aids to keep different calls visually distinct from each other.
+  The Story view was compared against the plain transcript next — verdict
+  was that, despite presenting the information differently (collapsed
+  reasoning/tool detail, one beat per turn), it still doesn't tell the
+  agent's story as clearly as the existing chronological transcript.
 
 ## Usage
 
@@ -192,7 +193,26 @@ both Jaeger and Grafana Tempo.
 
 The Story view prototype is also built and confirmed rendering correctly
 against real session data, running side by side with the existing
-transcript in the same `log_viz` app. Judging Jaeger vs. Tempo vs.
-transcript, and separately Story view vs. transcript, is left to whoever
-runs the comparison to observe firsthand — that comparison is the actual
-point of the lesson, not something to pre-decide here.
+transcript in the same `log_viz` app.
+
+**Final verdict, from actually running the comparison:** Jaeger and Tempo
+both surface valuable diagnostics and performance information (call
+timing, retries, error status), but neither UI clearly communicates the
+agent's overall decision-making — both felt dense and hard to follow, with
+no color-coding or other visual aids keeping different calls visually
+distinct. The Story view, despite presenting the same information
+differently (collapsed reasoning/tool detail, one beat per turn), still
+didn't tell the agent's story as clearly as the plain chronological
+transcript.
+
+**Direction taken as a result:**
+- OpenTelemetry (this stack, this instrumentation) stays available for
+  diagnostics and performance analysis — it isn't being ripped out.
+- The plain chronological transcript (`log_viz`'s existing `/sessions/:id`
+  view) remains the primary way to understand agent behavior, not the
+  Story view or either trace UI.
+- No further investment planned in either visualization experiment (trace
+  UI polish, or extending Story view) — both were a learning exercise
+  confirming what doesn't work, not groundwork for a final implementation.
+  Development focus moves back to gameplay features rather than more
+  visualization work.
