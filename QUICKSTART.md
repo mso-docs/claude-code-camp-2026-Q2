@@ -26,6 +26,13 @@ LOG_VIZ_SESSIONS_DIR="$(pwd)/../../../.boukensha/sessions" bundle exec ruby bin/
 
 ```
 
+Each session has two views: the default chronological **transcript**, and
+an experimental **Story view** (one narrative beat per turn, with
+reasoning/tool details collapsed by default) at `/sessions/:id/story` — or
+click "Story view" in the toggle under a session's header. See
+[docs/plans/15_otel_tracing.md](docs/plans/15_otel_tracing.md) for what
+it's comparing against and why.
+
 ## 1. Set your API key
 
 A config directory already exists at `.boukensha/` in the repo root
@@ -146,7 +153,7 @@ at least one tool call), then inspect the trace:
 
 - **Jaeger UI** — <http://localhost:16686> — select service
   `boukensha-agent`, find the recent trace.
-- **Grafana** — <http://localhost:3000> — Tempo is pre-provisioned as a
+- **Grafana** — <http://localhost:3001> — Tempo is pre-provisioned as a
   datasource; use Explore → Tempo → search by service name.
 
 Unset `OTEL_EXPORTER_OTLP_ENDPOINT` (or just don't set it) to run with

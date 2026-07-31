@@ -152,7 +152,22 @@ module LogViz
       halt 404, "Session not found: #{id}" unless File.file?(path)
 
       @session = Session.load(path)
+      @current_view = :transcript
       erb :session
+    end
+
+    # Prototype alternative to the transcript above: the same session data,
+    # regrouped into one narrative "beat" per turn instead of a flat
+    # chronological event log. See docs/plans/15_otel_tracing.md (§3/§4 of
+    # the lesson this came out of) for what this is comparing against.
+    get "/sessions/:id/story" do
+      id   = File.basename(params[:id])
+      path = File.join(settings.sessions_dir, "#{id}.jsonl")
+      halt 404, "Session not found: #{id}" unless File.file?(path)
+
+      @session = Session.load(path)
+      @current_view = :story
+      erb :story
     end
   end
 end

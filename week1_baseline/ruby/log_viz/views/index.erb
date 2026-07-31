@@ -22,6 +22,7 @@
           <td class="nowrap"><%= format_time(session.started_at) %></td>
           <td>
             <a href="/sessions/<%= session.id %>"><%= session.id %></a>
+            <a href="/sessions/<%= session.id %>/story" class="story-link">story</a>
             <% if session.any_limit_tripped? %><span class="limit-flag" title="a turn tripped a limit">&#9888;</span><% end %>
           </td>
           <td class="task">

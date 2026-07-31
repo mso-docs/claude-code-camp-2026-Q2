@@ -551,6 +551,129 @@ table.sessions a:hover {
   white-space: pre-wrap;
 }
 
+/* View toggle (Transcript / Story view) */
+.view-toggle {
+  font-size: 0.85rem;
+  margin-top: -0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.view-toggle a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.view-toggle a:hover {
+  text-decoration: underline;
+}
+
+.view-toggle .current {
+  font-weight: 600;
+}
+
+.story-note {
+  font-size: 0.82rem;
+  color: var(--muted);
+  font-style: italic;
+  margin-bottom: 1.25rem;
+}
+
+/* Story view — one beat per turn */
+.story {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.beat {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.beat-turn {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.beat-prompt {
+  font-size: 1.05rem;
+  font-style: italic;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.beat-thinking,
+.beat-action {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #f6f7f9;
+}
+
+.beat-thinking summary,
+.beat-action summary {
+  padding: 0.4rem 0.7rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: ui-monospace, monospace;
+}
+
+.beat-action-error {
+  border-color: #d9534f;
+}
+
+.beat-action-error summary {
+  color: #8a2e00;
+}
+
+.beat-thought {
+  padding: 0.6rem 0.9rem;
+  border-top: 1px solid var(--border);
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+
+.beat-thought-label {
+  display: block;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin-bottom: 0.2rem;
+}
+
+.beat-outcome {
+  background: var(--assistant-bg);
+  border-radius: 6px;
+  padding: 0.75rem 0.9rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.beat-foot {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.beat-foot.danger {
+  color: var(--danger);
+}
+
+.story-link {
+  margin-left: 0.5rem;
+  font-size: 0.8rem;
+}
+
 /* ANSI styles */
 .ansi-bold { font-weight: bold; }
 .ansi-underline { text-decoration: underline; }

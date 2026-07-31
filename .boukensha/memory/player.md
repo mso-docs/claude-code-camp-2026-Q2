@@ -1,64 +1,62 @@
 # Player State
 
-Updated: 2026-07-18
-Character: Dummy
-Class: Sentress
+Updated: 2026-07-18 (Fresh session)
+Character: Dummy the Sentress
 Level: 3
-Current test: Test 4
-Test status: Active - exploring Temple of Midgaard for Newbie Training area
-Last completed test: Test 3
+Current test: Test 5 - Sewer exploration phase
+Test status: Active - exploring sewers from The Dump downward
 
 ## Last Observed Position Context
 
-Exact room name: Temple Of Midgaard (southern end of temple hall)
-Last observed context: In the main temple hall. Giant marble block walls with ancient wall paintings depicting Gods, giants and peasants. Large steps lead down through temple gate to temple square below. To the west is the Reading Room; donation room in a small alcove to the east; automatic teller machine installed in wall.
-Exits confirmed: n (unexplored) / e (Donation Room) / s (down → Temple Square) / w (Reading Room) / d (down → Temple Square)
-
-Do not label the current room "Temple Square" — that is a different room reachable via stairs down from this one.
+Exact room name: The Sewer Entrance
+Last observed context: Standing in middle of a pipe leading north-south. Air shaft above leads to sunlight (impossible to climb). Exits: n (unexplored) / s (to Junction Going Three Ways, where I previously found and lost a sewer rat)
 
 ## Vitals and Character Details
 
-- Health: 16 at last observed prompt
-- Mana: 100 / 100
-- Movement: 82-83 / 90 at last observed prompt
-- Gold: 0 (broke — "You're broke!" blocks movement via direction commands)
+- Health: 16/16 hit points — critically low, currently resting to recover
+- Mana: 100/100
+- Movement: ~81 at last observed prompt (varies with position changes)
+- Gold: 110 gold coins
 - Quest points: 0
-- Armor class: 39 / 10
-- Age: 17
-- Hunger: Persistent state ("You are hungry.") — present across multiple rooms and sessions; may penalize or block actions
-- Thirst: Persistent state ("You are thirsty.") — present across multiple rooms and sessions; same concern as hunger
+- Experience: 2949 exp, need 5051 more to reach level 4 (7000 total required)
+- Armor class: 39/10
+- Alignment: 198
+- Age: 18 years old
+- Hunger: "You are hungry." — persistent state
+- Thirst: "You are thirsty." — persistent state
+- Equipment: <used as light> (nothing else equipped)
+- Inventory: Empty
 
 ## Current Objective
 
-### NEW STRATEGY (from player guidance):
-1. Leave temple area, fight monsters in sewers or fields outside temple grounds to earn gold.
-2. Use `kill <target>` or `kick <target>` to engage enemies; wait for them to attack if they initiate.
-3. After defeating — `get all from corpse` or `get gold` to loot body (gold may require separate pickup).
-4. Return to city, `deposit [amount] into atm` to accumulate savings.
-5. Use earned gold to pay direction tolls and unlock donation gate to explore further.
+Explore the sewer system downward from The Dump (reached via south from Common Square). Currently resting in The Sewer Entrance to recover HP before continuing. Will continue exploring north/south exits and look for mobs to fight for XP and gold.
 
-### Alternate paths still available:
-- Attempt `donate [gold_coins]` in Donation Room alcove (east from temple hall) — may open eastward passage.
-- Explore Reading Room (west exit) once mobile for Newbie Training area clues.
+## Route Traveled So Far (Test 5)
 
-## New Discoveries from Test 4 Exploration (not yet verified at end of test)
+| Command | Destination | Notes |
+| --- | --- | --- |
+| `s` | The Watery Sewer Bend | First room entered |
+| `w` | The Dark Passageway | Water floor ends here, dry ground |
+| `w` | The Junction | Pipe junction |
+| `w` | The Junction Going Three Ways | Found sewer rat (disappeared) |
+| `n` | The Sewer Entrance | Air shaft above, current location |
 
-### Gold acquisition attempts:
-- `get all` / `get [item] from atm` → "You're broke!" 
-- `withdraw [amount]` → silent failure, no output confirming success or error
-- ATM in the wall did not dispense funds automatically; requires pre-deposited balance.
+## New Discoveries from Test 5 Exploration
 
-### NPC interaction attempts:
-- Benefactor ("kind and caring soul") responded to `all` with "get some clothes on! Here, I will help." (did NOT give gold).
-- Benefactor redirect to donation room when `ask benefactor about newbie` issued.
-- No cityguard observed in temple hall; earlier cityguards seen at other locations only.
+### Rooms visited:
+- **The Watery Sewer**: Water up to hips; exits n/s
+- **The Watery Sewer Bend**: Water continues; exits n/w
+- **The Dark Passageway**: Dry ground; water/east leads back through arched entry to Watery Sewer; exits n/e/w
+- **The Junction**: Pipe junction with exits n/e/w
+- **The Junction Going Three Ways**: Exit n/e/w, previously contained sewer rat
+- **The Sewer Entrance** (current): Air shaft to sunlight above; exits n/s
 
-### Movement state:
-- The character has reached Temple of Midgaard but gold is insufficient for direction tolls.
-- Reading Room (west) — candidate Newbie Training area; unexplored due to gold requirement.
-- Down stairs from here lead to Temple Square, which loops back to Market Square via other tests' routes.
+### Key observations:
+- No mobs encountered successfully in this session (rat disappeared)
+- Character is critically low on HP (16/16) — needs rest
+- Has 110 gold coins but no equipment/inventory items
+- Both hungry and thirsty — may need to eat/drink if possible
 
 ## Recommended Next Action
 
-Attempt the Donation Room eastward using `donate [gold_coins]` with whatever gold is carried, or re-examine Reading Room (west exit) after obtaining gold — likely needs a gold coin dropped as payment before passage through Donation Room becomes possible. If Reading Room itself serves as Newbie Training, verify by examining all exits and NPCs inside once accessed.
-
+Wait for HP to recover from resting, then continue north from The Sewer Entrance to explore further in the sewer system. Consider fighting low-level mobs when ready. If unable to fight effectively due to low HP, return to surface (The Dump) and find a safer location to rest or acquire equipment/weapons first.

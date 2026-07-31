@@ -1,18 +1,24 @@
 # Week 2 · OpenTelemetry Tracing & Error Logs
 
-**Lives in:** `week0_explore/infrastructure/` (the observability stack) and
-`week1_baseline/python/12_context/boukensha/` (the instrumentation) — not
-`week2_capable/`, since this instruments the existing baseline agent rather
-than adding a new capability to it.
-**Builds on:** the existing `docker-compose.yml` (CircleMUD service) and the
-Python `12_context` agent (`Agent`, `Client`, `Registry.dispatch`).
-**Status:** Stack and instrumentation built and smoke-tested; a live
-docker + real-session run is still the user's to do (see Outcome).
-**Prompted by:** a lesson exercise — stand up an OTel stack, run the agent
-against it, look at the resulting trace in both Jaeger and Grafana Tempo,
-and judge whether either communicates the agent's decision-making better
-than the existing chronological session-log transcript
-(`week1_baseline/ruby/log_viz`).
+**Lives in:** `week0_explore/infrastructure/` (the observability stack),
+`week1_baseline/python/12_context/boukensha/` (the instrumentation), and
+`week1_baseline/ruby/log_viz/` (the Story view prototype) — not
+`week2_capable/`, since this instruments/extends existing baseline pieces
+rather than adding a new capability.
+**Builds on:** the existing `docker-compose.yml` (CircleMUD service), the
+Python `12_context` agent (`Agent`, `Client`, `Registry.dispatch`), and the
+Ruby `log_viz` session dashboard (`Session`, its Sinatra `App`, and the
+transcript template).
+**Status:** Built, smoke-tested, and confirmed working end-to-end: traces
+visible in both Jaeger and Grafana Tempo, and a Story view alternative to
+`log_viz`'s transcript running side by side with it against real session
+data.
+**Prompted by:** a lesson exercise in two parts — (1) stand up an OTel
+stack, run the agent against it, and judge whether Jaeger or Grafana Tempo
+communicates the agent's decision-making better than the existing
+chronological session-log transcript; (2) independently of tracing,
+prototype an alternative "Story view" session UI and compare it against
+that same transcript.
 
 ## Goal
 
@@ -83,6 +89,41 @@ Spans, nested to mirror the shape of one turn:
 `opentelemetry-exporter-otlp-proto-http` were added to
 [pyproject.toml](../../week1_baseline/python/12_context/pyproject.toml).
 
+## Design — Story view prototype (`log_viz`)
+
+Independent of tracing: an alternative session view added alongside
+`log_viz`'s existing transcript, so the two can be compared side by side
+on the same real session data, per the lesson's second half.
+
+- **[`Session#beats`](../../week1_baseline/ruby/log_viz/lib/log_viz/session.rb)**
+  — new method, regrouping the same flat, chronological `entries` list the
+  transcript already renders into one `Beat` struct per turn: the user's
+  ask, every reasoning/plan entry as `thinking`, every tool call, the
+  turn's actual narrated reply (`final_text` — skipping tool-use
+  placeholder text, same rule `Session#final_response` already used for
+  the session-wide case), and the `turn_end` entry if the turn finished.
+  No new parsing — same `entries` the transcript uses, just regrouped.
+- **New route** `GET /sessions/:id/story`
+  ([app.rb](../../week1_baseline/ruby/log_viz/lib/log_viz/app.rb)) renders
+  [views/story.erb](../../week1_baseline/ruby/log_viz/views/story.erb).
+  The existing `/sessions/:id` transcript route is unchanged.
+- **Shared header, differing body** — the session stats header (banner,
+  token/cost stat strip, cost breakdown, sparkline) was factored out of
+  `session.erb` into
+  [`views/_header.erb`](../../week1_baseline/ruby/log_viz/views/_header.erb)
+  so both views render identical metadata and differ only in how the
+  turn-by-turn content itself is shown — otherwise the comparison would be
+  confounded by unrelated layout differences. A small view-toggle link
+  (`Transcript` / `Story view`) sits under the header on both pages.
+- **What's actually different in the Story view**: reasoning/plan entries
+  collapse behind a `<details>&#129504; N thoughts` toggle instead of
+  always-visible blocks, each tool call collapses behind its own
+  `<details>&#9881; tool_name(...)` toggle instead of an always-expanded
+  block, and the turn's narrated reply is surfaced as a single prominent
+  "outcome" block. The goal being tested: does hiding the mechanical
+  detail by default make the narrative easier to follow, or does it just
+  hide detail that mattered.
+
 ## Verification plan
 
 - ~~Schema/compose validity~~ — done: all four new/changed YAML files
@@ -102,27 +143,56 @@ Spans, nested to mirror the shape of one turn:
   `configure()` returns without registering a provider and
   `tracer.start_as_current_span(...)` still starts/stops cleanly (no-op
   span), confirming a normal run with no collector present is unaffected.
-- **Not yet done (needs the user's own Docker + credentials):** bring the
-  stack up for real (`docker compose up -d` from
-  `week0_explore/infrastructure/`), run the actual agent against a live
-  session with `OTEL_EXPORTER_OTLP_ENDPOINT` pointed at the collector, and
-  open the resulting trace in both Jaeger (`:16686`) and Grafana
-  (`:3000` → Tempo). That live comparison — and the lesson's own
-  conclusion about whether either trace view beats `log_viz`'s
-  chronological transcript for understanding *why* the agent did
-  something, versus *how long* it took — is the part this plan
-  deliberately leaves to that live run rather than asserting a canned
-  answer.
+- ~~Live end-to-end run~~ — done: stack brought up via `docker compose up
+  -d` from `week0_explore/infrastructure/` (Grafana moved to host port
+  `3001` — `3000` was already in use locally), agent run against it with
+  `OTEL_EXPORTER_OTLP_ENDPOINT` pointed at the collector, trace confirmed
+  visible in both Jaeger (`:16686`) and Grafana Tempo (`:3001` → Explore →
+  Tempo datasource).
+- ~~Story view renders correctly~~ — done: ran `log_viz` locally against a
+  real session log (`.boukensha/sessions/20260731T022332Z-e4079acc.jsonl`,
+  a multi-turn MUD session with 20+ reasoning entries and dozens of tool
+  calls) and hit both `/sessions/:id` and `/sessions/:id/story` directly —
+  both return 200. Confirmed beats group correctly by turn (thinking
+  toggle count matches actual reasoning-entry count, tool-call toggles
+  render ANSI-colored results identically to the transcript's own
+  rendering, a turn still in progress when the log ends correctly omits
+  its outcome/turn-end footer rather than erroring on missing data), and
+  confirmed the transcript route still renders unchanged after factoring
+  the shared header into `_header.erb` (same message/tool-block count as
+  before the refactor).
+- **Still open:** the lesson's own qualitative calls — whether either
+  trace view (Jaeger/Tempo) beats the transcript for understanding *why*
+  the agent did something rather than *how long* it took, and separately
+  whether the Story view's collapsed-by-default reasoning/tool-call
+  presentation actually reads better than the transcript's flat,
+  always-expanded one or just hides detail that mattered. Both
+  deliberately left as judgment calls for whoever runs the comparison
+  rather than asserted here.
 
 ## Usage
 
 See the new "OpenTelemetry tracing (optional)" section in
-[QUICKSTART.md](../../QUICKSTART.md).
+[QUICKSTART.md](../../QUICKSTART.md) for the tracing stack.
+
+For the Story view: run `log_viz` as usual (see
+[QUICKSTART.md](../../QUICKSTART.md)'s Log Viewer command), open a
+session's transcript, and click **Story view** in the toggle under the
+header — or go straight to `/sessions/:id/story`. The session index page
+also links directly to `story` next to each session ID.
 
 ## Outcome
 
-Stack and instrumentation are built, wired, and unit/smoke-tested without
-docker. Bringing the stack up and judging Jaeger vs. Tempo vs. the
-transcript view against a real session is left to the user to run and
-observe — that comparison is the actual point of the lesson, not something
-to pre-decide here.
+Stack and instrumentation are built, wired, and confirmed working
+end-to-end: the observability stack came up cleanly (after clearing an
+unrelated home-network MTU/routing problem that was breaking large Docker
+Hub pulls — not a stack or instrumentation issue), the agent ran against
+it with tracing enabled, and the resulting trace showed up correctly in
+both Jaeger and Grafana Tempo.
+
+The Story view prototype is also built and confirmed rendering correctly
+against real session data, running side by side with the existing
+transcript in the same `log_viz` app. Judging Jaeger vs. Tempo vs.
+transcript, and separately Story view vs. transcript, is left to whoever
+runs the comparison to observe firsthand — that comparison is the actual
+point of the lesson, not something to pre-decide here.
