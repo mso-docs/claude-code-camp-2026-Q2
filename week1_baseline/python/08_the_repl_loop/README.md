@@ -71,7 +71,7 @@ instead of trusting the prose, worth remembering as a habit.
   Ruby's `$stdin.gets` returning `nil`.
 - **`Config`'s dir resolution gained a real third tier**, not just
   cosmetic: `$BOUKENSHA_DIR` → **a `.boukensha/` in the current working
-  directory, if one actually exists** → `~/.boukensha`. Lets a
+  directory, if one actually exists** → `$HOME/.boukensha`. Lets a
   project-local config override the home default without setting an env
   var. Verified directly against a temp CWD.
 - **`run()` and `repl()`'s setup logic are deliberately duplicated, not
@@ -99,7 +99,7 @@ Genuinely different from steps 05–07: `Repl.start()` blocks on stdin, so
   continues to the next prompt rather than crashing.
 - `Context.clear_messages()` unit-tested directly.
 - `Config`'s new middle tier: a `.boukensha/` in a temp CWD is picked up
-  over `~/.boukensha` when `$BOUKENSHA_DIR` is unset.
+  over `$HOME/.boukensha` when `$BOUKENSHA_DIR` is unset.
 - `Client`'s 401 path against a local stub server, alongside the existing
   step-04 retry/failure tests.
 - All three of `Agent`'s new `add_message` sites verified independently

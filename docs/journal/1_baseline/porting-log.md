@@ -10,7 +10,7 @@ this is the condensed version.
 
 ## 00 · Configuration
 
-`Config` resolves `.boukensha/` (`$BOUKENSHA_DIR` → `~/.boukensha`), loads
+`Config` resolves `.boukensha/` (`$BOUKENSHA_DIR` → `$HOME/.boukensha`), loads
 `.env` and `settings.yaml`. Ruby's string/symbol key duality for hash
 lookups just doesn't exist in Python — one string type collapses it, a
 real simplification rather than a translation. Verified against the Ruby
@@ -105,7 +105,7 @@ path) — easy to add to the first and miss the other two.
 ## 09 · Global Executable
 
 Packages Boukensha so a `boukensha` command resolves which step's code to
-run (`$BOUKENSHA_PATH` → `~/.boukensharc` → bundled default) — orthogonal
+run (`$BOUKENSHA_PATH` → `$HOME/.boukensharc` → bundled default) — orthogonal
 to `$BOUKENSHA_DIR`, which resolves *config*, not *code*. This step's
 Ruby snapshot quietly regresses three things step 08 had fixed (the
 friendly 401 message, the project-local `.boukensha/` config tier, the

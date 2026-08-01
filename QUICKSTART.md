@@ -1,7 +1,6 @@
 # QUICKSTART — running the Python port (step 12)
 
-Everything below assumes you're in the repo root:
-`/home/desktop/code/claude-code-camp-2026-Q2`
+Everything below assumes your shell is in the repository root.
 
 If you've already set the below up, you can access the Boukensha agent using the commands below:
 
@@ -38,7 +37,7 @@ it's comparing against and why.
 
 A config directory already exists at `.boukensha/` in the repo root
 (that's the designated spot — `Config` looks for `.boukensha/` in the
-current working directory before falling back to `~/.boukensha`).
+current working directory before falling back to `$HOME/.boukensha`).
 
 Edit `.boukensha/.env` and add the key required by your selected provider.
 For example, Anthropic uses:

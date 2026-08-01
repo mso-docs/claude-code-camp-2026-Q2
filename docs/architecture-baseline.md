@@ -7,7 +7,7 @@ lands. Ruby reference: [`week1_baseline/ruby/ITERATIONS.md`](../week1_baseline/r
 
 ```
 ┌─────────────┐
-│   Config    │  dir resolution: $BOUKENSHA_DIR or ~/.boukensha
+│   Config    │  dir resolution: $BOUKENSHA_DIR or $HOME/.boukensha
 │             │  loads .env (python-dotenv) + settings.yaml (pyyaml)
 └──────┬──────┘
        │ tasks("player") → settings dict
@@ -301,7 +301,7 @@ Additional notes for this step:
   `turn()` still only writes JSONL. The banner, if any, is `Repl`'s job.
   Caught by diffing rather than trusting the README — worth remembering.
 - `Config`'s dir resolution gains a real third tier: a `.boukensha/` in
-  the current working directory (if it exists) now outranks `~/.boukensha`,
+  the current working directory (if it exists) now outranks `$HOME/.boukensha`,
   though `$BOUKENSHA_DIR` still overrides both.
 - `/quiet`/`/loud` toggle real global state that nothing currently reads —
   ported faithfully, flagged so the no-visible-effect isn't mistaken for a
@@ -320,7 +320,7 @@ $PATH  ──▶  boukensha  (console-script shim, from [project.scripts])
                 │
                 ▼ resolve():
      1. $BOUKENSHA_PATH env var  (explicit override)
-     2. ~/.boukensharc file      (persistent default, one path)
+     2. $HOME/.boukensharc file      (persistent default, one path)
      3. bundled step (this one)  (fallback)
                 │
                 ▼

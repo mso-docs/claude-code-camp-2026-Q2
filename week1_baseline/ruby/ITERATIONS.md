@@ -79,7 +79,7 @@ The baseline mud agent is a fully working MUD agent that can connect to a tbaMUD
 
 ### 0 Configuration
 
-`Boukensha::Config` and ~/.boukensha directory stores all our configuration data including secrets, prompts, loggging (aka sessions) and settings file.
+`Boukensha::Config` and $HOME/.boukensha directory stores all our configuration data including secrets, prompts, loggging (aka sessions) and settings file.
 
 We have a env var called BOUKENSHA_DIR that lets override its default location which is in the user's home directory.
 
@@ -123,7 +123,7 @@ Also brings the OpenAI, Gemini, and Ollama Cloud backends online alongside Anthr
 
 ### 6 The Logger
 
-We create a logger which will record the logs of a session in ~/.boukensha/sessions/<date>-<session_id>.jsonl
+We create a logger which will record the logs of a session in $HOME/.boukensha/sessions/<date>-<session_id>.jsonl
 
 > We have a log_viz app which is a simple sintra app to visualize the sessions, We should really in the future port it to typescript and have it realtime.
 
@@ -147,14 +147,15 @@ lets us called `boukensha` anywhere in terminal to start using our agent.
 
 > Here we a .boukensharc get introduce which allows use to set the configuration path and the current gem path for boukensha binary to load and we end up having to carry that code in future steps
 
-Packages everything as an installable gem so the `boukensha` command is available anywhere on the machine. Adds `boukensha.gemspec`, `bin/boukensha`, and `lib/boukensha_loader.rb`. The loader resolves which step folder to use in priority order: `BOUKENSHA_PATH` env var → `~/.boukensharc` file → bundled default. `BOUKENSHA_DEBUG=1` prints the resolved path on startup.
+Packages everything as an installable gem so the `boukensha` command is available anywhere on the machine. Adds `boukensha.gemspec`, `bin/boukensha`, and `lib/boukensha_loader.rb`. The loader resolves which step folder to use in priority order: `BOUKENSHA_PATH` env var → `$HOME/.boukensharc` file → bundled default. `BOUKENSHA_DEBUG=1` prints the resolved path on startup.
 
 ```sh
 cd 09_global_executable
 gem build boukensha.gemspec
 gem install boukensha-0.9.0.gem
 
-BOUKENSHA_PATH=~/Sites/boukensha/09_global_executable boukensha
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+BOUKENSHA_PATH="$REPO_ROOT/week1_baseline/ruby/09_global_executable" boukensha
 ```
 
 Each step from here on ships its own gem the same way (`gem build boukensha.gemspec && gem install boukensha-<version>.gem`) — point `BOUKENSHA_PATH` at whichever step folder you want to run.

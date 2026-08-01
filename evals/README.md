@@ -7,8 +7,7 @@ the results for comparison. [`bakery.py`](bakery.py) is the primary scored
 scenario; [`return_to_midgaard.py`](return_to_midgaard.py) is a separately
 logged recovery scenario used to restore its expected starting room.
 
-Everything below assumes you're in the repo root:
-`/home/desktop/code/claude-code-camp-2026-Q2`
+Everything below assumes your shell is in the repository root.
 
 ## Prerequisites
 

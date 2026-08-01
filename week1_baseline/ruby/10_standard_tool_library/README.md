@@ -34,7 +34,7 @@ Commands run with a configurable timeout and an optional allow-list of permitted
 ```ruby
 Boukensha.run(
   task:             "...",
-  working_dir:      "/my/project",
+  working_dir:      Dir.pwd,
   allowed_commands: ["ruby", "git", "bundle"],  # nil = allow all (default)
   shell_timeout:    30                           # seconds, default 30
 )
@@ -52,8 +52,8 @@ Boukensha.run(task: "...", allowed_commands: ["ruby", "git"])
 Both modules can be registered manually if you need finer control:
 
 ```ruby
-Boukensha::Tools::FileSystem.register(registry, working_dir: "/my/project")
-Boukensha::Tools::Shell.register(registry, working_dir: "/my/project",
+Boukensha::Tools::FileSystem.register(registry, working_dir: Dir.pwd)
+Boukensha::Tools::Shell.register(registry, working_dir: Dir.pwd,
                               timeout: 10, allowed_commands: ["ruby"])
 ```
 
@@ -63,5 +63,6 @@ Boukensha::Tools::Shell.register(registry, working_dir: "/my/project",
 ruby examples/demo.rb
 
 # or via the global executable pointed at this step:
-BOUKENSHA_PATH=~/Sites/boukensha/10_standard_tool_library boukensha
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+BOUKENSHA_PATH="$REPO_ROOT/week1_baseline/ruby/10_standard_tool_library" boukensha
 ```

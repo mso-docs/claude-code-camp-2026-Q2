@@ -17,9 +17,9 @@ Connect with a MUD client, telnet, or netcat:
 telnet localhost 4000
 ```
 
-`docker-compose.yml` bind-mounts the host directory `./lib` at
-`/opt/circlemud/lib`. Player files and mutable world state therefore survive
-container recreation. `docker compose down -v` does not erase this bind
+`docker-compose.yml` bind-mounts the repository's `lib` directory as the
+container's game-data directory. Player files and mutable world state therefore
+survive container recreation. `docker compose down -v` does not erase this bind
 mount.
 
 To erase player accounts while retaining the world files, run the repository's
