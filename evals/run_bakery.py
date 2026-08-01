@@ -50,6 +50,32 @@ CONSECUTIVE_STALL_LIMIT = 3
 # preflight check reconnects.
 STALL_BACKOFF_SECONDS = 5
 
+# A flat 300s --timeout default silently killed 28% of bakery trials during
+# the 2026-08-01 overnight batches (see docs/journal/2.5_evals.md) — not by
+# the agent exhausting its own iteration/reprompt budget, but by an
+# unrelated wall clock racing it and winning, well before that budget was
+# used up (killed trials averaged ~14/25 iterations and 0 reprompts used).
+# Real observed per-iteration latency against a local Ollama backend: median
+# 6.6s, 90th percentile 11.2s — reprompt2 alone promises up to 3 turns *
+# MAX_TURNS iterations, which at that pace can take several times the old
+# flat default for a single trial. SECONDS_PER_ITERATION_ESTIMATE rounds up
+# from the observed 90th percentile for headroom (local model inference is
+# the dominant per-iteration cost here, not MUD round-trip time, which is
+# typically well under 1s); TIMEOUT_OVERHEAD_SECONDS covers per-trial cost
+# outside the iteration loop itself (auto-connect, settle delays).
+SECONDS_PER_ITERATION_ESTIMATE = 15.0
+TIMEOUT_OVERHEAD_SECONDS = 60
+
+
+def default_timeout(scenario, max_reprompts: int) -> int:
+    """Scales off what --reprompts actually promises for `scenario`, so the
+    agent's own iteration/reprompt design stays the deciding factor instead
+    of a flat guess that's silently wrong for a slower model/backend (or
+    silently way too generous for a fast one). Only used when --timeout
+    isn't passed explicitly — see main()."""
+    total_iterations = (max_reprompts + 1) * scenario.MAX_TURNS
+    return int(total_iterations * SECONDS_PER_ITERATION_ESTIMATE + TIMEOUT_OVERHEAD_SECONDS)
+
 
 def parse_target(spec: str) -> tuple[str, str]:
     backend, _, model = spec.partition(":")
@@ -62,7 +88,10 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--repetitions", type=int, default=5)
     ap.add_argument("--model", action="append", type=parse_target, dest="targets", help="backend:model, repeatable")
-    ap.add_argument("--timeout", type=int, default=300, help="seconds per trial")
+    ap.add_argument(
+        "--timeout", type=int, default=None,
+        help="seconds per trial (default: auto-scaled from --reprompts and the scenario's MAX_TURNS — see default_timeout())",
+    )
     ap.add_argument(
         "--reprompts", action="append", type=int, dest="reprompt_modes",
         help="max_reprompts value to test, repeatable (default: 0 and 2, i.e. strict + reprompt)",
@@ -81,6 +110,8 @@ def main() -> int:
         for backend, model in targets:
             for max_reprompts in reprompt_modes:
                 mode_label = "strict" if max_reprompts == 0 else f"reprompt{max_reprompts}"
+                trial_timeout = args.timeout if args.timeout is not None else default_timeout(bakery, max_reprompts)
+                print(f"[{backend}:{model} {mode_label}] timeout per trial: {trial_timeout}s", file=sys.stderr)
                 for rep in range(args.repetitions):
                     run_dir = RESULTS_DIR / batch_id / f"{backend}_{model.replace(':', '-')}" / mode_label / str(rep)
                     print(f"[{backend}:{model} {mode_label} rep {rep}] running...", file=sys.stderr)
@@ -88,7 +119,7 @@ def main() -> int:
                     try:
                         trial_results = boukensha_agent.run_once(
                             bakery, backend=backend, model=model, run_dir=run_dir,
-                            timeout=args.timeout, max_reprompts=max_reprompts,
+                            timeout=trial_timeout, max_reprompts=max_reprompts,
                         )
                     except boukensha_agent.RecoveryFailedError as e:
                         # Room mismatch AND every retried attempt to navigate

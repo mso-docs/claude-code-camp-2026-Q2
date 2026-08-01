@@ -205,6 +205,239 @@ table.eval-runs a:hover {
   background: #d03b3b;
 }
 
+/* Outcome breakdown stacked bar chart (see app.rb's outcome_bar_chart) —
+   width is data-driven (grows with the number of model x mode bars), so the
+   wrap scrolls horizontally instead of squeezing bars unreadably thin. */
+.outcome-chart-wrap {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.75rem 1rem 0.5rem;
+  margin-bottom: 1rem;
+  overflow-x: auto;
+}
+
+.outcome-chart {
+  display: block;
+}
+
+.outcome-grid {
+  stroke: #e1e0d9;
+  stroke-width: 1;
+}
+
+.outcome-axis {
+  stroke: #c3c2b7;
+  stroke-width: 1;
+}
+
+.outcome-tick,
+.outcome-axis-label,
+.outcome-axis-tick {
+  fill: #898781;
+  font-size: 9px;
+  font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+}
+
+.outcome-axis-label {
+  font-size: 10px;
+}
+
+.outcome-total {
+  fill: #4a4842;
+  font-size: 9px;
+  font-weight: 600;
+  font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+}
+
+.outcome-seg {
+  /* Same 2px surface-gap spacer as the scatter dot's opacity choice is
+     meant to solve for overlap — here the gap itself (computed in
+     outcome_bar_chart, not CSS) does that job, so segments read as
+     distinct stacked blocks rather than one solid color column. */
+}
+
+.outcome-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  padding: 0 0.25rem 0.5rem;
+}
+
+.outcome-legend .swatch {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  margin-right: 0.35rem;
+  vertical-align: middle;
+}
+
+/* /evals table of contents — a normal (non-sticky) card at the top of the
+   page. An earlier sticky+internally-scrolling version sat pinned over the
+   page content while scrolling, which read as cluttered rather than
+   helpful; each collapsible section below instead ends with a "back to
+   top" link (.back-to-top) for the "get back to the TOC" need without the
+   box floating over everything the whole time. */
+.evals-toc {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem 1.25rem 1.1rem;
+  margin-bottom: 1.5rem;
+}
+
+.evals-toc-title {
+  font-weight: 700;
+  margin-bottom: 0.7rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+}
+
+.evals-toc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 0.5rem 1.5rem;
+}
+
+.evals-toc-scenario {
+  min-width: 0;
+}
+
+.evals-toc-heading {
+  display: block;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text);
+  text-decoration: none;
+  padding-bottom: 0.35rem;
+  margin-bottom: 0.4rem;
+  border-bottom: 2px solid var(--border);
+}
+
+.evals-toc-heading:hover {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.evals-toc ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.evals-toc li {
+  margin-bottom: 0.2rem;
+}
+
+.evals-toc li a {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.35rem;
+  border-radius: 5px;
+  color: var(--text);
+  text-decoration: none;
+  font-size: 0.85rem;
+  line-height: 1.3;
+}
+
+.evals-toc li a:hover {
+  background: var(--bg);
+}
+
+.toc-link-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.toc-badge {
+  flex: 0 0 auto;
+  display: inline-block;
+  min-width: 2.4em;
+  text-align: center;
+  padding: 0.1rem 0.3rem;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+/* Docs-site-style "jump back to the TOC" at the end of each collapsible
+   section — the TOC itself isn't sticky/pinned (see above), so this is the
+   way back up without scrolling by hand. */
+.back-to-top {
+  display: inline-block;
+  margin-top: 0.75rem;
+  font-size: 0.8rem;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.back-to-top:hover {
+  text-decoration: underline;
+}
+
+/* Collapsible per-group section (scatter chart + full run table) — the
+   biggest, most repetitive content on /evals as more scenario x model x
+   mode combinations accumulate. Closed by default; the summary alone
+   carries enough (scenario/model/mode + pass rate) to decide whether to
+   open it. */
+.eval-group-details {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  padding: 0 0.9rem;
+}
+
+.eval-group-details summary {
+  cursor: pointer;
+  padding: 0.85rem 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  list-style: none;
+}
+
+.eval-group-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.eval-group-details summary::before {
+  content: "\25b8";
+  color: var(--muted);
+  margin-right: 0.5rem;
+  display: inline-block;
+  transition: transform 0.1s ease;
+}
+
+.eval-group-details[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.eval-group-title {
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+
+.eval-group-meta {
+  color: var(--muted);
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.eval-group-details > .scatter-wrap,
+.eval-group-details > table.eval-runs {
+  margin-bottom: 1rem;
+}
+
 .room-text {
   margin-top: 0.35rem;
   padding: 0.5rem 0.6rem;

@@ -8,7 +8,7 @@ Tools registered (grouped by concern):
 
   Connection
     mud_connect       — open socket and log in
-    mud_disconnect    — close socket gracefully
+    mud_disconnect    — close the client socket (does not reset character state)
     mud_status        — report whether the session is open
 
   Perception
@@ -118,7 +118,14 @@ def register(registry, *, name: str, password: str, host: str = "localhost", por
         except SessionError as e:
             return f"error: {e}"
 
-    @registry.tool("mud_disconnect", description="Close the connection to the MUD server gracefully.", parameters={})
+    @registry.tool(
+        "mud_disconnect",
+        description=(
+            "Close the client TCP connection. This does not log out, save, or reset "
+            "the character; CircleMUD may retain it link-dead in the current room."
+        ),
+        parameters={},
+    )
     def mud_disconnect():
         if session.is_open():
             session.close()

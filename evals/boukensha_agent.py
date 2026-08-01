@@ -133,13 +133,13 @@ def check_starting_room(expected_substring: str, mud: dict) -> str:
     right after. Returns the room text on a match; raises
     WrongStartingRoomError (case-insensitive substring check) if not.
 
-    This is the only automatable check available, not a fix: there is no
+    This check only observes state: there is no
     recall/teleport command on this MUD server (checked directly — bare
     `recall` returns "Huh!?!"), and CircleMUD resumes a character exactly
-    where it was on both a clean quit and a raw disconnect, so nothing in
-    this codebase can move the character back on its own. What this *can*
-    do is refuse to spend a trial (or a whole batch) assuming a starting
-    position that isn't actually true anymore."""
+    where it was on both a clean quit and a raw disconnect. run_once() can
+    respond to a mismatch by launching the navigation-based recovery task,
+    but this function itself never mutates the character. It prevents a real
+    scenario from silently assuming a starting position that is not true."""
     session = Session(host=mud["host"], port=mud["port"])
     try:
         session.open()

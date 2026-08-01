@@ -11,10 +11,10 @@ As of July 18, 2026, four agents or model configurations have attempted the MUD 
 
 Individual completion reports:
 
-- [Codex 5.6 Sol](../../../week0_explore/explore_architecture/01_plain_agent/completion-report/codex-5.6-sol.md)
-- [Qwen 3.5](../../../week0_explore/explore_architecture/01_plain_agent/completion-report/qwen3.5.md)
-- [Qwen3-Coder:30B](../../../week0_explore/explore_architecture/01_plain_agent/completion-report/qwen3-coder-30b.md)
-- [Qwen 3.6](../../../week0_explore/explore_architecture/01_plain_agent/completion-report/qwen3.6.md)
+- [Codex 5.6 Sol](../../../week0_explore/explore_architecture/001_playing_agent/completion-report/codex-5.6-sol.md)
+- [Qwen 3.5](../../../week0_explore/explore_architecture/001_playing_agent/completion-report/qwen3.5.md)
+- [Qwen3-Coder:30B](../../../week0_explore/explore_architecture/001_playing_agent/completion-report/qwen3-coder-30b.md)
+- [Qwen 3.6](../../../week0_explore/explore_architecture/001_playing_agent/completion-report/qwen3.6.md)
 
 ## Codex 5.6 Sol Result
 

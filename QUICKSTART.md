@@ -7,7 +7,8 @@ If you've already set the below up, you can access the Boukensha agent using the
 
 Start the Docker container (even if you have Docker Desktop/Engine running):
 ```bash
-cd week0_explore/infrastructure docker compose up --build
+cd week0_explore/infrastructure
+docker compose up --build
 ```
 
 Run the Boukensha executable:
@@ -39,7 +40,8 @@ A config directory already exists at `.boukensha/` in the repo root
 (that's the designated spot — `Config` looks for `.boukensha/` in the
 current working directory before falling back to `~/.boukensha`).
 
-Edit `.boukensha/.env` and put your real Anthropic key in:
+Edit `.boukensha/.env` and add the key required by your selected provider.
+For example, Anthropic uses:
 
 ```
 ANTHROPIC_API_KEY=sk-ant-your-real-key-here
@@ -47,6 +49,10 @@ ANTHROPIC_API_KEY=sk-ant-your-real-key-here
 
 `.env` is gitignored (matches anywhere in the tree), so this is safe to
 edit in place.
+
+Supported remote-provider variables are `ANTHROPIC_API_KEY`,
+`OPENAI_API_KEY`, `GEMINI_API_KEY`, `OLLAMA_API_KEY` (Ollama Cloud), and
+`OPENROUTER_API_KEY`. Local Ollama does not require an API key.
 
 ## 2. (Optional) settings.yaml
 
@@ -57,7 +63,7 @@ tokens). `.boukensha/settings.yaml`:
 ```yaml
 tasks:
   player:
-    provider: anthropic       # swap to "ollama" to use your local server (no API key needed)
+    provider: anthropic       # anthropic, openai, gemini, ollama, ollama_cloud, or openrouter
     model: claude-sonnet-4-6  # swap to "qwen3.6:27b" or "qwen3.6:35b-a3b" (both whitelisted
                                # in boukensha/backends/ollama.py + boukensha/models.py)
 
@@ -102,6 +108,12 @@ the step-12 commit):
 
 If you're running a different local model, add it to both `MODELS`
 tables (context window + whatever else you want tracked) the same way.
+
+OpenRouter is the exception to backend model whitelisting: set
+`provider: openrouter` and use any `vendor/model` slug. Unknown slugs still fall back
+to the 32,000-token entry in `boukensha/models.py` for context compaction,
+so add verified model metadata there before relying on automatic compaction
+near the model's real limit.
 
 ## 3. Run it
 

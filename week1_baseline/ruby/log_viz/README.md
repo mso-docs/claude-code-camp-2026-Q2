@@ -1,7 +1,7 @@
 # Log Viz
 
-A small Sinatra app that turns `.boukensha/sessions/*.jsonl` logs (written by
-`Boukensha::Logger`) into a human-readable transcript in the browser.
+A small Sinatra app that turns Boukensha JSONL logs into human-readable
+transcripts and summarizes scored eval runs.
 
 ## What it does
 
@@ -16,6 +16,12 @@ A small Sinatra app that turns `.boukensha/sessions/*.jsonl` logs (written by
   - raw MUD output (including ANSI color codes) is converted to colored HTML
     so room descriptions, exits, and status lines look the way they would in
     a terminal
+- **`/sessions/:id/story`** — renders the same session as a compact narrative,
+  with reasoning and tool details collapsed by default.
+- **`/evals`** — reads `evals/results/*.jsonl` and groups outcomes by scenario,
+  model, and budget mode, with success heatmaps and failure breakdowns.
+- **`/evals/runs/...`** — opens an eval run in the same transcript/story views
+  and links to its Jaeger trace when a trace ID was recorded.
 
 It only reads the `.jsonl` files — nothing is written back.
 
@@ -33,6 +39,8 @@ Then open <http://localhost:4567>.
 | Env var | Default | Purpose |
 |---|---|---|
 | `LOG_VIZ_SESSIONS_DIR` | `<repo root>/.boukensha/sessions` | Directory of `.jsonl` session logs to read |
+| `LOG_VIZ_EVAL_RESULTS_DIR` | `<repo root>/evals/results` | Directory containing eval result rows and nested trial logs |
+| `LOG_VIZ_JAEGER_URL` | `http://localhost:16686` | Base URL used to construct optional trace links |
 | `PORT` | `4567` | Port to listen on |
 | `BIND` | `localhost` | Address to bind to |
 
@@ -46,4 +54,5 @@ Then open <http://localhost:4567>.
 - `lib/log_viz/ansi.rb` — converts ANSI SGR escape codes in tool results into
   `<span>` elements styled via `public/style.css`.
 - `lib/log_viz/app.rb` — the Sinatra app and view helpers.
+- `lib/log_viz/eval_results.rb` — parses and groups eval result rows.
 - `views/` — ERB templates for the session list and transcript pages.

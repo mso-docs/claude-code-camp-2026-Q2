@@ -91,7 +91,7 @@
               <span class="badge-fail">FAIL</span>
             <% end %>
             <% if run.fabricated? %><span title="wrote a non-empty file, but the content didn't match — likely substituted something else for the real target">&#127917;</span><% end %>
-            <% if run.mud_connected? == false %><span title="mud_connect() never once reported success — any output was invented, not observed">&#128268;</span><% end %>
+            <% if run.mud_connected? == false %><span title="no authenticated MUD action was observed — output was not grounded in live game data">&#128268;</span><% end %>
           </td>
           <td class="task">
             <% if run.final_room %>

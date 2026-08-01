@@ -3,8 +3,9 @@
 This directory runs the `week1_baseline/python/12_context` boukensha agent
 through fixed "scenarios" (a task, a turn budget, and a way to check success
 from game state — no LLM judge) across models and repetitions, and records
-the results for comparison. See [`bakery.py`](bakery.py) for the one
-scenario that exists so far.
+the results for comparison. [`bakery.py`](bakery.py) is the primary scored
+scenario; [`return_to_midgaard.py`](return_to_midgaard.py) is a separately
+logged recovery scenario used to restore its expected starting room.
 
 Everything below assumes you're in the repo root:
 `/home/desktop/code/claude-code-camp-2026-Q2`
@@ -15,18 +16,25 @@ Everything below assumes you're in the repo root:
   `week0_explore/infrastructure`, or check `docker ps` — see the main
   [QUICKSTART.md](../QUICKSTART.md)).
 - Whatever backend you're testing against is reachable — a local/remote
-  Ollama server, or `ANTHROPIC_API_KEY` set in `.boukensha/.env` at the repo
-  root (the eval runner reads that file automatically; see
-  [`boukensha_agent.py`](boukensha_agent.py)'s `_load_env_vars`).
-- **The MUD character's position isn't reset between trials, and nothing
-  here can fix that — only detect and react to it.** CircleMUD resumes a
+  Ollama server, or the right `..._API_KEY` (`ANTHROPIC_API_KEY`,
+  `OPENAI_API_KEY`, `GEMINI_API_KEY`, `OLLAMA_API_KEY`, `OPENROUTER_API_KEY`)
+  set in `.boukensha/.env` at the repo root (the eval runner reads that file
+  automatically; see [`boukensha_agent.py`](boukensha_agent.py)'s
+  `_load_env_vars`). `--model openrouter:<vendor>/<model>` accepts any
+  OpenRouter-catalog model slug without backend-side pre-registration.
+  Unknown model IDs still use `boukensha/models.py`'s 32,000-token context
+  fallback for agent compaction; add a verified entry there when the real
+  context window is known.
+- **The MUD character's position isn't automatically reset between trials.** CircleMUD resumes a
   character exactly where it was on both a clean `quit` and a raw
   disconnect (checked directly), independent of whether `save_character`
   was ever called — so every trial's ending room is the next trial's
   starting room, full stop. There is no `recall`/teleport command on this
   server either (checked directly — bare `recall` returns `Huh!?!`), so
-  there is no way to programmatically move the character back to a known
-  room. Three layers exist to deal with this, none of which are a real fix:
+  there is no instant command that moves the character back to a known room.
+  Four safeguards deal with this, but only the recovery task changes
+  position, and it does so through ordinary gameplay rather than a true
+  fixture reset:
   1. `save_character` is removed from the tool registry entirely for every
      eval trial ([`_disable_save`](_driver.py) — not shadowed with a
      "disabled" message, genuinely gone; a model calling it anyway gets a
@@ -83,7 +91,7 @@ Flags:
 | `--repetitions N` | `5` | Trials per (model, mode) combination. LLM output is stochastic — a single run's pass/fail is close to meaningless; run enough reps to see a *rate*. |
 | `--model backend:model` | `ollama:qwen3.6:35b-a3b` | Repeatable — pass it more than once to test several models in one batch, e.g. `--model ollama:qwen3.6:35b-a3b --model anthropic:claude-haiku-4-5`. |
 | `--reprompts N` | `0` and `2` (both) | Repeatable — see "Strict vs. reprompt" below. Passing this at all replaces the default entirely, so `--reprompts 0` alone runs strict-only. |
-| `--timeout SECONDS` | `300` | Per-trial kill switch. Bump it up for reprompt mode — each extra reprompt can add another ~200s of real MUD/LLM round-trip time. |
+| `--timeout SECONDS` | auto-scaled | Per-trial kill switch. Default scales off `--reprompts` and the scenario's `MAX_TURNS` (`run_bakery.default_timeout()`) — `(max_reprompts + 1) * MAX_TURNS * 15s + 60s`, e.g. ~7 min for strict, ~20 min for `reprompt2`. A flat 300s default silently killed 28% of bakery trials in the 2026-08-01 overnight batches, well before the agent's own iteration/reprompt budget was used up — see `docs/journal/2.5_evals.md`. Pass `--timeout` explicitly to override the auto-scaled value for every mode in the batch. |
 
 Examples:
 
@@ -100,6 +108,28 @@ python3 evals/run_bakery.py --reprompts 0 --reprompts 2 --repetitions 1
 # compare two models, 3 reps each, strict only
 python3 evals/run_bakery.py --model ollama:qwen3.6:35b-a3b --model ollama:qwen3.6:27b --reprompts 0 --repetitions 3
 ```
+
+## OpenCode comparison runner
+
+`run_bakery_opencode.py` runs the same bakery task through the separate
+OpenCode agent in `.opencode/agents/bakery-evaluator.md`:
+
+```bash
+python3 evals/run_bakery_opencode.py
+python3 evals/run_bakery_opencode.py --repetitions 3 --model ollama/qwen3.6:35b-a3b
+```
+
+It requires the `opencode` CLI plus `MUD_USERNAME` and `MUD_PASSWORD` in the
+repository-root `.env`. It drives the older `tmux`/telnet bridge rather than
+Boukensha's Python connector, writes `evals/results/bakery_opencode.jsonl`,
+and always attempts to stop its `opencode-mud` tmux session after a trial.
+
+Do not run it concurrently with a Boukensha batch when both are configured
+for the same character; CircleMUD allows only one live connection per
+character. Unlike `run_bakery.py`, the OpenCode runner currently has no
+starting-room preflight, return-to-Midgaard recovery, reprompt mode, or
+consecutive-stall circuit breaker. It is intended for occasional comparison
+runs, not unattended overnight batches.
 
 ## Strict vs. reprompt modes
 
@@ -132,7 +162,8 @@ rows in the dashboard (below) are for.
 
 ## Viewing results
 
-Results accumulate in `evals/results/*.jsonl` (one file per scenario) —
+Results accumulate in `evals/results/*.jsonl` (for example `bakery.jsonl`
+and `bakery_opencode.jsonl`) —
 gitignored except for the `.jsonl` files themselves, since the per-run
 working directories and throwaway configs under `evals/results/<batch>/`
 are regenerable. View them in `log_viz`:

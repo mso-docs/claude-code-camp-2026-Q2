@@ -10,7 +10,7 @@ collapsed to flat `Config` methods.
 
 Ruby's own `README.md` for this step documents only the context-management
 half — verified by diff, not assumed. It says nothing about the Tasks
-removal, the reasoning-block normalization across all five backends, or
+removal, the reasoning-block normalization across the original five backends, or
 OpenAI's full `/v1/responses` rewrite, all of which are real, substantial
 changes in `lib/boukensha/**/*.rb` this step. This port implements and
 documents all of it.
@@ -103,7 +103,7 @@ loop (it cannot re-trigger either limit, and doesn't increment
 `iteration`, though its tokens still count toward the reported turn
 total).
 
-## Reasoning-block normalization (all five backends)
+## Reasoning-block normalization (the original five backends)
 
 Every backend's `parse_response()` now normalizes provider-specific
 "thinking" output into a common block shape, documented in
@@ -149,6 +149,20 @@ Anthropic's native ordering). `Agent._log_reasoning` emits one
   single entry (`gemma4:e4b`); `OllamaCloud.MODELS` keeps its 3 entries,
   reordered.
 
+### Post-port OpenRouter extension
+
+The current Python directory also includes an OpenRouter backend that was
+added after the five-backend Ruby port described above. It uses OpenRouter's
+OpenAI-compatible `/v1/chat/completions` schema and accepts arbitrary
+`vendor/model` slugs rather than requiring a backend `MODELS` entry. Its
+optional `reasoning` response field is normalized into the same common block
+shape.
+
+Model acceptance and context accounting are separate: arbitrary OpenRouter
+slugs can be sent to the API, but `boukensha.run()` still obtains the agent's
+context ceiling from `boukensha/models.py`. Unknown IDs use that module's
+32,000-token fallback until a verified entry is added.
+
 ## A quieter real change: two file-system tools disabled
 
 Found only by diffing `tools/file_system.rb` — not mentioned in the Ruby
@@ -178,7 +192,7 @@ tool-use placeholder). `prompt()` gains a `context_window:` field.
 | `boukensha/config.py` | rewrite — flat methods replace `Tasks::Base`/`Tasks::Player`; `system_override` dead code documented inline |
 | `boukensha/logger.py` | rewrite — cost/task/provider tracking removed; `compaction`/`reasoning`/`plan` added |
 | `boukensha/agent.py` | rewrite — dual circuit breakers, compaction-before-loop, reasoning logging, `\n`-joined `_extract_text` |
-| `boukensha/backends/*.py` | reasoning normalization everywhere; `openai.py` is a full `/v1/responses` rewrite; MODELS tables trimmed per-backend |
+| `boukensha/backends/*.py` | reasoning normalization everywhere; `openai.py` is a full `/v1/responses` rewrite; the later `openrouter.py` extension uses `/v1/chat/completions` |
 | `boukensha/backends/base.py` | doc-only — normalized response contract documented at module level |
 | `boukensha/tools/file_system.py` | `list_directory`/`search_files` disabled (commented out), matching Ruby |
 | `boukensha/repl.py` | `/compact` command; `task_settings:` removed, `max_turn_tokens:` added |

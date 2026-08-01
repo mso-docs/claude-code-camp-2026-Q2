@@ -1,8 +1,51 @@
-<h1>Evals</h1>
+<h1 id="evals-top">Evals</h1>
 
 <% if @groups.empty? %>
   <p class="empty">No eval results found in <code><%= settings.eval_results_dir %></code>. Run <code>python3 evals/run_bakery.py</code> to generate some.</p>
 <% else %>
+  <nav class="evals-toc">
+    <div class="evals-toc-title">Jump to</div>
+    <div class="evals-toc-grid">
+      <div class="evals-toc-scenario">
+        <a class="evals-toc-heading" href="#pass-fail-by-model">Pass vs. fail by model</a>
+      </div>
+      <% @heatmaps.each do |hm| %>
+        <div class="evals-toc-scenario">
+          <a class="evals-toc-heading" href="#scenario-<%= anchor_slug(hm.scenario) %>"><%= hm.scenario %></a>
+          <ul>
+            <% @groups.select { |g| g.scenario == hm.scenario }.each do |g| %>
+              <% frac = g.run_count.zero? ? nil : g.success_rate / 100.0 %>
+              <li>
+                <a href="#group-<%= anchor_slug(g.scenario, g.model_label, g.mode) %>">
+                  <span class="toc-badge" style="background: <%= heatmap_fill(frac) %>; color: <%= heatmap_text_color(frac) %>;"><%= g.success_rate.round %>%</span>
+                  <span class="toc-link-text"><span class="model-list"><%= g.model_label %></span> &middot; <%= g.mode %></span>
+                </a>
+              </li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+    </div>
+  </nav>
+
+  <h2 id="pass-fail-by-model">Pass vs. fail by model</h2>
+  <p class="meta">
+    Every result for a model, summed across every scenario and mode — no attempt to separate out which
+    scenario a pass came from (a return_to_midgaard recovery pass counts the same as a bakery pass). The
+    coarse "which models are actually winning" view; see the per-scenario breakdowns below for the detail
+    this collapses.
+  </p>
+  <% chart = pass_fail_bar_chart(@pass_fail_by_model) %>
+  <% if chart.empty? %>
+    <p class="empty">No runs yet.</p>
+  <% else %>
+    <div class="scatter-legend">
+      <span><span class="dot dot-pass"></span>Pass</span>
+      <span><span class="dot dot-fail"></span>Fail</span>
+    </div>
+    <div class="outcome-chart-wrap"><%= chart %></div>
+  <% end %>
+
   <table class="eval-groups">
     <thead>
       <tr>
@@ -39,7 +82,7 @@
   </table>
 
   <% @heatmaps.each do |hm| %>
-    <h2><%= hm.scenario %> &mdash; success rate by model &times; mode</h2>
+    <h2 id="scenario-<%= anchor_slug(hm.scenario) %>"><%= hm.scenario %> &mdash; success rate by model &times; mode</h2>
     <div class="heatmap-wrap">
       <table class="heatmap">
         <thead>
@@ -76,10 +119,35 @@
         <span class="heatmap-legend-label">100% success</span>
       </div>
     </div>
+
+    <h3><%= hm.scenario %> &mdash; outcome breakdown by model &times; mode</h3>
+    <p class="meta">
+      Same cells as the heatmap above, same order — this shows *why* the failures happened
+      (fabricated content, never connected, timed out, ran out of budget) instead of just the pass rate.
+    </p>
+    <%
+      scenario_groups = hm.models.flat_map { |model| hm.modes.filter_map { |mode| hm.group_for(model, mode) } }
+      chart = outcome_bar_chart(scenario_groups)
+    %>
+    <% if chart.empty? %>
+      <p class="empty">No runs yet for this scenario.</p>
+    <% else %>
+      <div class="outcome-legend">
+        <% outcome_categories.each do |cat| %>
+          <span><span class="swatch" style="background: <%= outcome_color(cat) %>;"></span><%= outcome_label(cat) %></span>
+        <% end %>
+      </div>
+      <div class="outcome-chart-wrap"><%= chart %></div>
+    <% end %>
+    <a class="back-to-top" href="#evals-top">&uarr; Back to top</a>
   <% end %>
 
   <% @groups.each do |group| %>
-    <h2><%= group.scenario %> &mdash; <span class="model-list"><%= group.model_label %></span> &mdash; <%= group.mode %></h2>
+    <details class="eval-group-details" id="group-<%= anchor_slug(group.scenario, group.model_label, group.mode) %>">
+      <summary>
+        <span class="eval-group-title"><%= group.scenario %> &mdash; <span class="model-list"><%= group.model_label %></span> &mdash; <%= group.mode %></span>
+        <span class="eval-group-meta"><%= group.success_count %>/<%= group.run_count %> passed (<%= group.success_rate.round %>%)</span>
+      </summary>
 
     <div class="scatter-wrap">
       <div class="scatter-legend">
@@ -130,7 +198,7 @@
               <% if run.process_failed? %><span title="the agent process crashed or exited non-zero">&#9888;</span><% end %>
               <% if run.timed_out? %><span title="killed after exceeding the trial timeout">&#8987;</span><% end %>
               <% if run.fabricated? %><span title="wrote a non-empty file, but the content didn't match — likely substituted something else for the real target">&#127917;</span><% end %>
-              <% if run.mud_connected? == false %><span title="mud_connect() never once reported success — any output was invented, not observed">&#128268;</span><% end %>
+              <% if run.mud_connected? == false %><span title="no authenticated MUD action was observed — output was not grounded in live game data">&#128268;</span><% end %>
             </td>
             <td class="nowrap">
               <% if run.turn_count %>
@@ -163,5 +231,7 @@
         <% end %>
       </tbody>
     </table>
+    <a class="back-to-top" href="#evals-top">&uarr; Back to top</a>
+    </details>
   <% end %>
 <% end %>

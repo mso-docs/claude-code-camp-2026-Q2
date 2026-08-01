@@ -83,9 +83,9 @@ README for detail):
                  │ PromptBuilder │  to_api_payload() / headers() / url()
                  └──────┬────────┘
                          │ delegates to whichever backend is configured
-        ┌────────┬───────┼────────┬──────────────┐
-        ▼        ▼       ▼        ▼              ▼
-   Anthropic   OpenAI  Gemini   Ollama      OllamaCloud
+        ┌────────┬───────┼────────┬──────────────┬────────────┐
+        ▼        ▼       ▼        ▼              ▼            ▼
+   Anthropic   OpenAI  Gemini   Ollama      OllamaCloud   OpenRouter
    (backends/base.py: model validation, context_window, cost estimate — shared)
 ```
 
@@ -517,7 +517,8 @@ context-management half and says nothing about the other):
   `compact_messages()` on demand but — an asymmetry ported as-is from
   Ruby, not "fixed" — emits no `Logger.compaction` event.
 
-Reasoning-block normalization touches all five backends: Anthropic's
+Reasoning-block normalization was implemented across the original five
+backends: Anthropic's
 `thinking`/`redacted_thinking` round-trip with signature preserved;
 Gemini's `thoughtSignature` round-trips on both `reasoning` and `tool_use`
 blocks (plus one confirmed-dead `thinkingLevel: "LOW"` branch for a model
@@ -529,6 +530,14 @@ different message array (`to_input`, interleaved
 `function_call`/`function_call_output` items instead of one message with
 `tool_calls`), flat tool shape (no `function:` wrapper), and a
 `reasoning: {"effort": "none"}` payload field.
+
+The current Python step also has an OpenRouter extension using its
+OpenAI-compatible `/v1/chat/completions` endpoint. Unlike the original
+backends, it accepts arbitrary `vendor/model` slugs instead of requiring a
+`MODELS` whitelist and normalizes OpenRouter's optional `reasoning` field.
+The agent's context ceiling is still resolved independently through
+`boukensha/models.py`; an unknown slug therefore uses that module's 32,000-
+token fallback until verified model metadata is added there.
 
 A quieter real change, found only by diffing `tools/file_system.rb` (not
 mentioned in Ruby's README at all): `list_directory` and `search_files`

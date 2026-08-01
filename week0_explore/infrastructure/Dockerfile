@@ -19,6 +19,15 @@ RUN git clone --depth 1 --branch "$TBAMUD_REF" \
         https://github.com/tbamud/tbamud.git circlemud
 
 WORKDIR /tmp/circlemud
+# nameserver_is_slow defaults to NO (config.c), which means every new
+# connection blocks the entire single-threaded game loop on a synchronous
+# gethostbyaddr() reverse-DNS lookup (new_descriptor() in comm.c). Docker's
+# bridge network has no usable reverse DNS for its gateway IP, so this stalls
+# unpredictably (sometimes past a client's login timeout) on every single
+# connect/reconnect — exactly the pattern the eval harness's rapid
+# reconnect cycle hits hardest. Flipping the default skips the lookup
+# entirely and uses the numeric IP, same as toggling it live via CEDIT.
+RUN sed -i 's/int nameserver_is_slow = NO;/int nameserver_is_slow = YES;/' src/config.c
 RUN ./configure \
     && make -C src
 
