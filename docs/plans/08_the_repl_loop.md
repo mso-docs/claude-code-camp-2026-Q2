@@ -84,9 +84,9 @@ user-entered line is `"\n"`, never `""`, so EOF and "user just pressed
 Enter" stay distinguishable before stripping.
 
 **Client's config-dir resolution gains a third tier.** Previously
-`$BOUKENSHA_DIR` env var → `~/.boukensha`. Now: `$BOUKENSHA_DIR` →
+`$BOUKENSHA_DIR` env var → `$HOME/.boukensha`. Now: `$BOUKENSHA_DIR` →
 **a `.boukensha/` directory in the current working directory, if one
-actually exists** → `~/.boukensha`. This is a real behavior change (lets a
+actually exists** → `$HOME/.boukensha`. This is a real behavior change (lets a
 project-local `.boukensha/` override the home directory without setting an
 env var) — ported as a genuine third branch, not folded into the existing
 two.
@@ -121,7 +121,7 @@ terminal I/O:
 - Unit-test the `Client` 401 path against a local stub server, alongside
   the existing 503-retries/400-fails-immediately tests from step 04.
 - Unit-test `Config`'s new middle resolution tier: a `.boukensha/` in a
-  temp CWD gets picked up over `~/.boukensha` when `$BOUKENSHA_DIR` is
+  temp CWD gets picked up over `$HOME/.boukensha` when `$BOUKENSHA_DIR` is
   unset.
 - Confirm all three of `Agent`'s new `add_message` call sites actually
   persist text: normal end-turn, successful wind-down, and the

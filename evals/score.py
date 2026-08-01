@@ -74,12 +74,31 @@ def score_run(scenario, run_result: dict) -> dict:
     # mud.py's mud_connect() tool itself ever actually reported success in
     # the log, straight from the MUD server's own response text, not
     # anything the model said about it.
+    # mud.py's register() auto-connects at driver startup, before the agent's
+    # first turn — but only logs anything on failure (a stderr print); a
+    # successful auto-connect leaves zero trace in session.jsonl. A model
+    # that starts out already connected (the common case now that CircleMUD's
+    # DNS-lookup stall is fixed — see mud_manager/session.py history) often
+    # never calls mud_connect() explicitly at all, going straight to look/move
+    # and succeeding — which the mud_connect()-only check below would have
+    # missed entirely and scored as never-connected. Every other MUD tool
+    # (look, move, shop, ...) is guard()-protected in mud.py: it can only
+    # return a non-"error:" result if the session was genuinely open and
+    # logged in at that moment, so a successful call to any of them is just
+    # as solid a signal as a successful mud_connect() itself.
+    GUARD_PROTECTED_MUD_TOOLS = {
+        "look", "examine", "check", "move", "flee", "set_position", "track",
+        "attack", "skill_strike", "consider", "say", "tell", "channel_say",
+        "get_item", "drop_item", "put_item", "equip_item", "consume_item",
+        "cast_spell", "use_magic_item", "shop", "practice", "save_character",
+        "send_raw",
+    }
     mud_connected = any(
         e.get("phase") == "tool_result"
-        and e.get("name") == "mud_connect"
         and e.get("ok", True)
         and isinstance(e.get("result"), str)
         and not e["result"].strip().lower().startswith("error:")
+        and (e.get("name") == "mud_connect" or e.get("name") in GUARD_PROTECTED_MUD_TOOLS)
         for e in entries
     )
 

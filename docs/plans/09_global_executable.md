@@ -13,7 +13,7 @@ knows where to look. A loader resolves *which* step's code to boot, in
 priority order:
 
 1. `$BOUKENSHA_PATH` env var — point at any step folder
-2. `~/.boukensharc` — a file containing a single path, for a persistent default
+2. `$HOME/.boukensharc` — a file containing a single path, for a persistent default
 3. The bundled step (this one) — the fallback
 
 This is orthogonal to `$BOUKENSHA_DIR` (Ruby, and our `state.config()`),
@@ -38,7 +38,7 @@ unexplained reversions, none mentioned anywhere in this step's README
 - `client.rb` loses the friendly `401` message added in step 08, reverting
   to the generic "API request failed after N attempts" wording.
 - `config.rb` loses the project-local `.boukensha/` CWD tier added in step
-  08, reverting to the plain 2-tier (`$BOUKENSHA_DIR` → `~/.boukensha`)
+  08, reverting to the plain 2-tier (`$BOUKENSHA_DIR` → `$HOME/.boukensha`)
   resolution from step 07 and earlier.
 - `repl.rb`'s banner loses the computed API-key-status / "directory not
   found" messaging, reverting to plain `(default)` placeholders for
@@ -112,7 +112,7 @@ the same role Ruby's `bin/boukensha` shebang script plays by hand.
 - Unit-test `resolve()`'s three-tier priority directly (no real install
   needed): `$BOUKENSHA_PATH` set and valid; `$BOUKENSHA_PATH` set but
   invalid (should abort with a specific message, not silently fall
-  through); unset with a valid `~/.boukensharc`-equivalent (parameterize
+  through); unset with a valid `$HOME/.boukensharc`-equivalent (parameterize
   the rc path for testability rather than hardcoding `~`); neither set,
   falls back to the bundled step.
 - Confirm the "step doesn't support the REPL" path: point resolution at a

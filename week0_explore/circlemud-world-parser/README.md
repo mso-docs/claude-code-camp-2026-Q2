@@ -21,6 +21,8 @@ Here are the different types of files in CircleMUD v3.1:
 | `obj`          | Objects                                                     |
 | `shp`          | Shops                                                       |
 | `zon`          | Zone files (what to load where, how often to refresh, etc.) |
+| `trg`          | DG Script triggers                                          |
+| `qst`          | Quests                                                      |
 
 The problem
 -----------
@@ -101,52 +103,25 @@ Here's the same item as above in our new JSON file:
 Usage
 -----
 
-Before using this, make sure the requirements are installed:
+This repository uses `uv` and requires the Python version declared in
+`pyproject.toml`. Install the environment from this directory:
 
-    pip install -r requirements.txt
+    uv sync
 
-Let's say we want to convert the objects in `lib/world/obj/30.obj` to JSON. Using this package, you can run
+To convert the bundled `assets/obj/30.obj` file to JSON, run:
 
-    python parse.py 30.obj > obj/30.json
+    uv run circlemud-parse assets/obj/30.obj > 30.json
     
 or
 
-    python parse.py --dest obj/30.json 30.obj
+    uv run circlemud-parse --dest 30.json assets/obj/30.obj
     
-which are equivalent. The input file will be recognized as CircleMUD object file and parsed appropriately. The same will be true of any of the accepted file formats. Any parsing errors will be logged to `stderr` but will not cause the script to exit and will not be transferred via pipes or written to output files. For example:
+These are equivalent. The file extension selects the parser. Entry-level
+parse errors are logged to `stderr`; successfully parsed entries are still
+written to the JSON output.
 
-```
-$ python parse.py world/obj/0.obj > 0.obj.json
-2015-08-23 01:22:37,159 - __main__ - ERROR - Error parsing:
-
-	0
-	bug~
-	a bug~
-	This object is BAD!  If you see it, there must be a bug in the game.  Please
-	report it immediately using the BUG command.~
-	~
-	13 0 0
-	0 0 0 0
-	0 0 0
-	
-	Traceback (most recent call last):
-	  File "circlemud-world-parser/utils.py", line 89, in parse_from_string
-	    d = parse_function(text)
-	  File "circlemud-world-parser/object.py", line 62, in parse_object
-	    weight, cost, rent = [int(v) for v in fields[7].split()]
-	ValueError: too many values to unpack
-	
-$ head 0.obj.json
-[
-  {
-    "affects": [], 
-    "aliases": [
-      "wings"
-    ], 
-    ...
-```
-
-If you want to check out the JSON for all of the stock CircleMUD world files, it's in the [`output` folder](https://github.com/isms/circlemud-world-parser/tree/master/output) of this repo.
+The upstream parser project also publishes converted stock CircleMUD files
+in its [`output` folder](https://github.com/isms/circlemud-world-parser/tree/master/output).
 
 Other notes
 -----------
@@ -155,7 +130,10 @@ Other notes
 
 You may want to convert all of the files in the CircleMUD world folder (typically found at `lib/world/`).
 
-A bash script, `convert_all.sh` is also included which will parse all recognized files to JSON in a folder called `output/` while maintaining the same folder structure. Given a folder like this:
+A bash script, `convert_all.sh`, is also included. It parses the five classic
+world types (`mob`, `obj`, `shp`, `wld`, and `zon`) to JSON in a folder called
+`_output/` by default while maintaining the same folder structure. Given a
+folder like this:
 
     world
     ├── mob
@@ -170,7 +148,7 @@ You can run the following command:
 
 And you will end up with this:
 
-    output
+    _output
     ├── mob
     ├── obj
     ├── shp
@@ -181,7 +159,10 @@ The new folders will have JSON files instead of `.obj`, `.mob`, `.wld` and so fo
 
 ### Make shortcuts
 
-Tests can be run with `make test`, and all of the stock CircleMUD files in `world/` can be converted to JSON in the `output/` directory with `make all`.
+Tests can be run with `make test`. `make all` converts the bundled files under
+`assets/` into `_output/`. The repository-level
+`week0_explore/bin/convert-world` helper additionally converts `trg` and `qst`
+files into `week0_explore/preview/data/world/`.
 
 ### Non-standard codebases
 

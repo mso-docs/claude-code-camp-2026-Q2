@@ -66,7 +66,7 @@ You can also provide a session id or override the destination directory:
 
 ```ruby
 Boukensha::Logger.new(session_id: "manual-session")
-Boukensha::Logger.new(dir: "/tmp/boukensha-sessions")
+Boukensha::Logger.new(dir: File.join(Dir.pwd, "boukensha-sessions"))
 ```
 
 For compatibility, `log:` still accepts an explicit file path, but normal iteration usage should write under `.boukensha/sessions`.

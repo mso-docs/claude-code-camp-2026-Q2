@@ -33,6 +33,7 @@ _API_KEY_ENV_VARS = {
     "openai": "OPENAI_API_KEY",
     "gemini": "GEMINI_API_KEY",
     "ollama_cloud": "OLLAMA_API_KEY",
+    "openrouter": "OPENROUTER_API_KEY",
     # "ollama" deliberately absent: local Ollama needs no API key.
 }
 
@@ -56,7 +57,11 @@ def _make_backend(backend: str, *, api_key: str | None, model: str, ollama_host:
         return backends.Ollama(host=ollama_host, model=model)
     if backend == "ollama_cloud":
         return backends.OllamaCloud(api_key=api_key, model=model)
-    raise ValueError(f"Unknown backend {backend!r}. Use 'anthropic', 'openai', 'gemini', 'ollama', or 'ollama_cloud'.")
+    if backend == "openrouter":
+        return backends.OpenRouter(api_key=api_key, model=model)
+    raise ValueError(
+        f"Unknown backend {backend!r}. Use 'anthropic', 'openai', 'gemini', 'ollama', 'ollama_cloud', or 'openrouter'."
+    )
 
 
 def run(
@@ -97,9 +102,10 @@ def run(
                        current working directory, resolved fresh on every
                        call — not baked in as a function-definition-time
                        default, since the cwd can change between calls).
-                       Registers tools.file_system (pwd, list_directory,
-                       read_file, write_file, delete_file, search_files) and
-                       tools.shell (run_command) automatically.
+                       Registers tools.file_system (pwd, read_file,
+                       write_file, delete_file) and tools.shell
+                       (run_command) automatically. list_directory and
+                       search_files are disabled in step 12.
                        Pass working_dir=False to opt out entirely.
 
     allowed_commands:  list of shell-executable names the agent is allowed to

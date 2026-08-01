@@ -23,10 +23,13 @@ After that, `boukensha` is on your `$PATH` and works from any directory.
 
 The loader resolves in this order:
 
+In the examples below, `REPO_ROOT` means the root of your local checkout. You
+can set it with `REPO_ROOT="$(git rev-parse --show-toplevel)"`.
+
 | Priority | Source | Example |
 |----------|--------|---------|
-| 1 | `BOUKENSHA_PATH` env var | `BOUKENSHA_PATH=~/Sites/boukensha/07_the_repl_loop boukensha` |
-| 2 | `~/.boukensharc` file | `echo ~/Sites/boukensha/07_the_repl_loop > ~/.boukensharc` |
+| 1 | `BOUKENSHA_PATH` env var | `BOUKENSHA_PATH="$REPO_ROOT/week1_baseline/ruby/07_the_repl_loop" boukensha` |
+| 2 | `$HOME/.boukensharc` file | store the desired step directory in this file |
 | 3 | Bundled default | just run `boukensha` |
 
 `BOUKENSHA_PATH` must point to a step folder that contains `lib/boukensha.rb`.
@@ -34,11 +37,13 @@ The loader resolves in this order:
 ## Running a specific step
 
 ```bash
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+
 # step 7 (interactive REPL)
-BOUKENSHA_PATH=~/Sites/boukensha/07_the_repl_loop boukensha
+BOUKENSHA_PATH="$REPO_ROOT/week1_baseline/ruby/07_the_repl_loop" boukensha
 
 # step 6 doesn't have a REPL — loader tells you how to run it
-BOUKENSHA_PATH=~/Sites/boukensha/06_the_run_dsl boukensha
+BOUKENSHA_PATH="$REPO_ROOT/week1_baseline/ruby/06_the_run_dsl" boukensha
 # => boukensha: the step at .../06_the_run_dsl does not support the interactive REPL
 #    Run its examples directly, e.g.: ruby .../06_the_run_dsl/examples/*.rb
 ```
@@ -47,7 +52,7 @@ BOUKENSHA_PATH=~/Sites/boukensha/06_the_run_dsl boukensha
 
 ```bash
 BOUKENSHA_DEBUG=1 boukensha
-# => [boukensha] loading from: /path/to/step
+# => [boukensha] loading from: <resolved-step-directory>
 ```
 
 ## The key idea

@@ -7,7 +7,7 @@ lands. Ruby reference: [`week1_baseline/ruby/ITERATIONS.md`](../week1_baseline/r
 
 ```
 ┌─────────────┐
-│   Config    │  dir resolution: $BOUKENSHA_DIR or ~/.boukensha
+│   Config    │  dir resolution: $BOUKENSHA_DIR or $HOME/.boukensha
 │             │  loads .env (python-dotenv) + settings.yaml (pyyaml)
 └──────┬──────┘
        │ tasks("player") → settings dict
@@ -83,9 +83,9 @@ README for detail):
                  │ PromptBuilder │  to_api_payload() / headers() / url()
                  └──────┬────────┘
                          │ delegates to whichever backend is configured
-        ┌────────┬───────┼────────┬──────────────┐
-        ▼        ▼       ▼        ▼              ▼
-   Anthropic   OpenAI  Gemini   Ollama      OllamaCloud
+        ┌────────┬───────┼────────┬──────────────┬────────────┐
+        ▼        ▼       ▼        ▼              ▼            ▼
+   Anthropic   OpenAI  Gemini   Ollama      OllamaCloud   OpenRouter
    (backends/base.py: model validation, context_window, cost estimate — shared)
 ```
 
@@ -301,7 +301,7 @@ Additional notes for this step:
   `turn()` still only writes JSONL. The banner, if any, is `Repl`'s job.
   Caught by diffing rather than trusting the README — worth remembering.
 - `Config`'s dir resolution gains a real third tier: a `.boukensha/` in
-  the current working directory (if it exists) now outranks `~/.boukensha`,
+  the current working directory (if it exists) now outranks `$HOME/.boukensha`,
   though `$BOUKENSHA_DIR` still overrides both.
 - `/quiet`/`/loud` toggle real global state that nothing currently reads —
   ported faithfully, flagged so the no-visible-effect isn't mistaken for a
@@ -320,7 +320,7 @@ $PATH  ──▶  boukensha  (console-script shim, from [project.scripts])
                 │
                 ▼ resolve():
      1. $BOUKENSHA_PATH env var  (explicit override)
-     2. ~/.boukensharc file      (persistent default, one path)
+     2. $HOME/.boukensharc file      (persistent default, one path)
      3. bundled step (this one)  (fallback)
                 │
                 ▼
@@ -517,7 +517,8 @@ context-management half and says nothing about the other):
   `compact_messages()` on demand but — an asymmetry ported as-is from
   Ruby, not "fixed" — emits no `Logger.compaction` event.
 
-Reasoning-block normalization touches all five backends: Anthropic's
+Reasoning-block normalization was implemented across the original five
+backends: Anthropic's
 `thinking`/`redacted_thinking` round-trip with signature preserved;
 Gemini's `thoughtSignature` round-trips on both `reasoning` and `tool_use`
 blocks (plus one confirmed-dead `thinkingLevel: "LOW"` branch for a model
@@ -529,6 +530,14 @@ different message array (`to_input`, interleaved
 `function_call`/`function_call_output` items instead of one message with
 `tool_calls`), flat tool shape (no `function:` wrapper), and a
 `reasoning: {"effort": "none"}` payload field.
+
+The current Python step also has an OpenRouter extension using its
+OpenAI-compatible `/v1/chat/completions` endpoint. Unlike the original
+backends, it accepts arbitrary `vendor/model` slugs instead of requiring a
+`MODELS` whitelist and normalizes OpenRouter's optional `reasoning` field.
+The agent's context ceiling is still resolved independently through
+`boukensha/models.py`; an unknown slug therefore uses that module's 32,000-
+token fallback until verified model metadata is added there.
 
 A quieter real change, found only by diffing `tools/file_system.rb` (not
 mentioned in Ruby's README at all): `list_directory` and `search_files`

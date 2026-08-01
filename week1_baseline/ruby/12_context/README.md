@@ -82,4 +82,5 @@ gem install boukensha-0.12.0.gem
 ruby examples/example.rb
 
 # via the global executable:
-BOUKENSHA_DIR=~/Sites/Claude-Code-Camp/.boukensha BOUKENSHA_PATH=~/Sites/Claude-Code-Camp/week1_baseline/12_context boukensha
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+BOUKENSHA_DIR="$REPO_ROOT/.boukensha" BOUKENSHA_PATH="$REPO_ROOT/week1_baseline/ruby/12_context" boukensha

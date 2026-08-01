@@ -1,7 +1,7 @@
 # 00 · Configuration (Python port)
 
 Python port of [`ruby/00_config`](../../ruby/00_config). Same behavior, same
-`.boukensha/` directory (`BOUKENSHA_DIR` env var, else `~/.boukensha`),
+`.boukensha/` directory (`BOUKENSHA_DIR` env var, else `$HOME/.boukensha`),
 same `settings.yaml` schema — see the Ruby README for the full schema and
 directory-resolution rules, which are unchanged here.
 

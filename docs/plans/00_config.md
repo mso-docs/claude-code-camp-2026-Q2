@@ -7,7 +7,7 @@
 ## Goal
 
 One class (`Config`) that resolves `.boukensha/` (`$BOUKENSHA_DIR` or
-`~/.boukensha`), loads `.env`, and loads `settings.yaml` into a plain dict.
+`$HOME/.boukensha`), loads `.env`, and loads `settings.yaml` into a plain dict.
 Task settings (`tasks.player.*`) are looked up through a stateless
 `Tasks::Base` → `Tasks::Player` pair — class methods only, never instantiated.
 

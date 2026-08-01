@@ -1,9 +1,9 @@
 # bubbletea native-extension patch (pending-input buffer)
 
 The `bubbletea` gem ships as a **precompiled platform gem**, and this fix lives
-in its C extension — i.e. *outside* this repo, under
-`~/.rvm/.../gems/bubbletea-0.1.4-<platform>/`. That copy is **lost whenever the
-gem is reinstalled** (e.g. `bundle install` re-downloading the native gem).
+in its C extension — i.e. *outside* this repository, in RubyGems' installed
+gem directory. That copy is **lost whenever the gem is reinstalled** (for
+example, when `bundle install` downloads the native gem again).
 
 These files are the versioned source of truth so the fix is reproducible:
 

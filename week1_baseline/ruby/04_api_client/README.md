@@ -97,7 +97,7 @@ When the model wants to call a tool the response looks different. Anthropic uses
 
 ## Output eaxmple
 
-andrew ~/Sites/Claude-Code-Camp/iterations  $ ruby 03_api_client/examples/step3.rb                              
+$ ruby 03_api_client/examples/step3.rb
 === BOUKENSHA Step 4: API Client ===
 
 Sending request to https://api.anthropic.com/v1/messages...

@@ -36,15 +36,14 @@ def _disable_save(dsl: boukensha.RunDSL) -> None:
     result — reading exactly like an unrecognized command, no bespoke
     "disabled" message needed.
 
-    Why remove it at all: CircleMUD persists the character's room across
-    logins, and every eval trial logs in as the same shared account. If a
-    run calls save_character mid-task, every later trial (any scenario, any
-    model) starts from wherever that run happened to be instead of a fixed
-    room — silently invalidating strict-vs-reprompt and model-vs-model
-    comparisons (a run that got saved at the goal room looks artificially
-    strong). Real play via `boukensha.run()`/`repl()` outside of evals is
-    unaffected — this only applies to the block evals/boukensha_agent.py
-    passes in.
+    Why remove it at all: CircleMUD already preserves the live character's
+    room across reconnects whether or not this command is called, so this
+    does not solve within-batch position drift. An explicit save can also
+    make the current room durable in the player file used after a real server
+    restart, however, extending that drift beyond the live process. Eval
+    tasks have no reason to mutate that durable checkpoint. Real play via
+    `boukensha.run()`/`repl()` outside evals is unaffected — this only applies
+    to the block evals/boukensha_agent.py passes in.
     """
     dsl.registry.context.tools.pop("save_character", None)
 

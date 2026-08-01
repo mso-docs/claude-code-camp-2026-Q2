@@ -7,16 +7,21 @@ cd week0_explore/infrastructure
 docker compose up --build
 ```
 
-Some other helpful docker commands for us the know.
+Some other useful Docker commands:
 ```sh
 docker compose up --build -d # run in the background
-docker compose logs -f # delete the logs
+docker compose logs -f # follow the logs
 docker compose down # shut it down
-docker compose down -v # shut it down and delete the persisted virtual volume
-docker volume rm infrastructure_circlemud-lib # manually delete the volume (you need to stop the container first.)
 ```
 
-*The Docker VSC Extension provide click-ops to manage running containers, strongly recommend installing.*
+Game data is a bind mount at `infrastructure/lib`, not a named Docker volume,
+so `docker compose down -v` does not reset it. To delete all player accounts
+while keeping the world data, run `./bin/reset` from the infrastructure
+directory. This is destructive and cannot be undone unless the player files
+were backed up.
+
+The Docker VS Code extension provides optional click-based controls for
+managing running containers.
 
 ## Connecting To CircleMUD
 
@@ -29,13 +34,13 @@ nc localhost 4000
 
 ## Create Admin Character
 
-The first character you create will because your admin character.
-Think of it as your AWS root account. You aren't suppose to play the game as this characeter.
+On an empty player database, the first character you create becomes the
+administrator. Treat it like a root account rather than a normal player.
 
-They admin character will have the following attributes:
+The administrator has the following attributes:
 - Level 34
-- Known as the Implentor
-- Top Admistrator Role
+- Known as the Implementor
+- Top administrator role
 
 I would recommend setting this to: `admin` / `password`
 
@@ -79,8 +84,8 @@ Exit out of the MUD so we can proceed to create our main character.
 
 ## Create Main Character
 
-Create a new character recommended: `dummy` and `helloworld`
-Choose a class any class, gender.
+Create a normal test character; the examples use `dummy` and `helloworld`.
+Choose any class and gender.
 
 ## Learn About Basic Commands
 
@@ -92,7 +97,7 @@ help weather
 help where
 help who
 help look
-help exaxime
+help examine
 help exits
 help consider
 ```
@@ -103,34 +108,41 @@ help consider
 help quests
 help inventory
 help equipment
-help experience # learn how experience worksskill
+help experience # learn how experience works
 help ac # learn about armour class
 help warrior # learn about your class
 help practice # learn about practicing a skill or spell
-help spells # learn about spells 
+help spells # learn about spells
 ```
 
 ## First Steps
 
 > I would get a pencil and paper and map out where you are.
 
-- The Temple of Midgaard - check the balance of your bank account
-- THe Reading Room - leave a message on the large bulletion board
-- By The Template of Altar - examine alter
+- The Temple of Midgaard — inspect the exits and nearby rooms
+- The Reading Room — leave a message on the large bulletin board
+- By The Temple Altar — examine the altar
 - Temple Square - drink from the temple square
 - Find your guild:
   - Clerics Guild: West of Temple Square
   - Thieves Guild: South of The Dark Alley
   - Warrior Guild: East of Main Street on the south side
   - Mages Guild:  West Main Street on the south Side
-- Practice at your Guild eg. `practice kick`
-- look for weak enemines to defeat eg. `consider` to determine their strength
-  - look around the midgaard without leaving town.
-  - gather the corpse `get all corpse`
-- check your hitpoints (HP) with score and heal up by `rest` or `sleep` your hitpoints, perioidlly check until are fully healed.
+- Practice at your guild, for example `practice kick`.
+- Look for weak enemies and use `consider` before attacking.
+  - Explore Midgaard without leaving town.
+  - Loot a defeated enemy with `get all corpse`.
+- Check hit points with `score`; use `rest` or `sleep` and check periodically
+  until recovered.
 
 ### What if I get lost?
 
-If you quit and renter the game you will start back at By The Template of Altar. You need to user `offer` and `rent` at Inn's reception to persist yourself at location after exiting and rentering the game.
+Disconnecting or reconnecting is not a location reset. While the server is
+running, tbaMUD normally leaves the character link-dead in its current room;
+logging in again reconnects to that same in-world body. A clean `quit` also
+must not be treated as a guaranteed return to the Temple.
 
-- [World Data](https://github.com/Yuffster/CircleMUD/tree/master/lib/world)
+Use your map to walk back to the Temple of Midgaard. `offer` and `rent` at an
+inn are equipment/rent-system commands, not a reliable navigation reset.
+
+- [Bundled world data](infrastructure/lib/world)

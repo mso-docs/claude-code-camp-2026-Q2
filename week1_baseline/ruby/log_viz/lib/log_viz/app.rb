@@ -243,6 +243,29 @@ module LogViz
       # (references/palette.md), both clear 3:1 contrast on a white surface.
       EVAL_STATUS_COLOR = { pass: "#0ca30c", fail: "#d03b3b" }.freeze
 
+      # Six-category identity encoding for the outcome bar chart (see
+      # EvalResults::OUTCOME_ORDER / EvalRun#outcome_category) — different
+      # in kind from EVAL_STATUS_COLOR above, which is a two-state pass/fail
+      # status, not a "which of several reasons" identity. Order matches
+      # OUTCOME_ORDER exactly (pass, never_connected, fabricated, timed_out,
+      # out_of_budget, other_fail) and was picked from the project's
+      # categorical palette (green/blue/orange/aqua/yellow/magenta slots),
+      # then validated as an ordered adjacent-pair sequence with
+      # scripts/validate_palette.js from the dataviz skill — reordering
+      # these breaks that validation, so don't shuffle them without
+      # re-running it. Three of the six (aqua/yellow/magenta) land below the
+      # 3:1 surface-contrast floor, which the skill treats as a WARN, not a
+      # FAIL, on the condition that a table view stays available as backup —
+      # the existing per-run table below every chart already provides that.
+      OUTCOME_COLORS = {
+        pass: "#008300",
+        never_connected: "#2a78d6",
+        fabricated: "#eb6834",
+        timed_out: "#1baf7a",
+        out_of_budget: "#eda100",
+        other_fail: "#e87ba4",
+      }.freeze
+
       # The project's data-viz palette's sequential blue ramp (step 100 →
       # step 700, light → dark), used unmodified for the heatmap's magnitude
       # encoding (success rate is a proportion, one hue, light→dark — never
@@ -344,6 +367,174 @@ module LogViz
           </svg>
         SVG
       end
+
+      # Inline SVG stacked bar chart: one bar per EvalGroup (a model x mode
+      # cell for one scenario — pass `groups` in the same order as the
+      # heatmap above it renders its rows/columns, so scanning down the
+      # heatmap and across this chart lines the two up). Segments stack in
+      # EvalResults::OUTCOME_ORDER so failure *composition* is visible, not
+      # just the pass rate the heatmap already shows — this is what actually
+      # answers "track errors ... across all models" (bakery.py + score.py's
+      # doc comments) rather than a second view of the same rate number.
+      # Y axis is an absolute run count on purpose, not a percentage: n=3 and
+      # n=30 look identical as a rate but very different as a bar height,
+      # and that difference is exactly the kind of thing worth catching
+      # before trusting a rate next to it. Bar slot width is fixed per group
+      # (BAR_SLOT) rather than the chart's total width being fixed, since the
+      # number of model x mode combinations grows as more get tested — wrap
+      # the returned SVG in an overflow-x:auto container in the view.
+      OUTCOME_BAR_SLOT = 72
+      OUTCOME_CHART_MIN_WIDTH = 360
+
+      def outcome_bar_chart(groups, height: 300)
+        groups = groups.reject { |g| g.run_count.zero? }
+        return "" if groups.empty?
+
+        pad = { left: 42, right: 16, top: 20, bottom: 90 }
+        plot_w = [groups.length * OUTCOME_BAR_SLOT, OUTCOME_CHART_MIN_WIDTH].max
+        width = pad[:left] + plot_w + pad[:right]
+        plot_h = height - pad[:top] - pad[:bottom]
+
+        bar_w = [OUTCOME_BAR_SLOT - 16, 12].max
+        max_total = [groups.map(&:run_count).max, 1].max
+
+        y_of = ->(v) { (pad[:top] + plot_h - (v.to_f / max_total) * plot_h).round(1) }
+
+        grid = (0..4).map do |i|
+          yt = (max_total * i / 4.0).round
+          y = y_of.call(yt)
+          %(<line class="outcome-grid" x1="#{pad[:left]}" y1="#{y}" x2="#{pad[:left] + plot_w}" y2="#{y}"/>) +
+            %(<text class="outcome-tick" x="#{pad[:left] - 6}" y="#{y + 3}" text-anchor="end">#{yt}</text>)
+        end.join
+
+        bars = groups.each_with_index.map do |g, i|
+          slot_x = pad[:left] + (i * OUTCOME_BAR_SLOT)
+          x = (slot_x + (OUTCOME_BAR_SLOT - bar_w) / 2.0).round(1)
+          counts = g.outcome_counts
+          running = 0
+          segments = EvalResults::OUTCOME_ORDER.filter_map do |cat|
+            n = counts[cat]
+            next if n.zero?
+
+            y_top = y_of.call(running + n)
+            y_bottom = y_of.call(running)
+            running += n
+            # 2px surface gap between stacked segments (dataviz skill's mark spec).
+            seg_h = [y_bottom - y_top - 2, 0].max
+            label = "#{EvalResults::OUTCOME_LABELS[cat]}: #{n} — #{g.model_label} / #{g.mode}"
+            %(<rect class="outcome-seg" x="#{x}" y="#{y_top.round(1)}" width="#{bar_w}" height="#{seg_h.round(1)}" fill="#{OUTCOME_COLORS[cat]}"><title>#{text_html(label)}</title></rect>)
+          end.join
+
+          label_x = (x + bar_w / 2.0).round(1)
+          total_label = %(<text class="outcome-total" x="#{label_x}" y="#{pad[:top] - 6}" text-anchor="middle">#{g.run_count}</text>)
+          tick_y = pad[:top] + plot_h + 12
+          axis_label = %(<text class="outcome-axis-tick" x="#{label_x}" y="#{tick_y}" text-anchor="end" transform="rotate(-40 #{label_x} #{tick_y})">#{text_html("#{g.model_label} · #{g.mode}")}</text>)
+
+          segments + total_label + axis_label
+        end.join
+
+        <<~SVG
+          <svg class="outcome-chart" viewBox="0 0 #{width} #{height}" width="#{width}" height="#{height}" role="img" aria-label="run outcome breakdown by model and mode, stacked by pass or failure reason">
+            #{grid}
+            <line class="outcome-axis" x1="#{pad[:left]}" y1="#{pad[:top]}" x2="#{pad[:left]}" y2="#{pad[:top] + plot_h}"/>
+            <line class="outcome-axis" x1="#{pad[:left]}" y1="#{pad[:top] + plot_h}" x2="#{pad[:left] + plot_w}" y2="#{pad[:top] + plot_h}"/>
+            <text class="outcome-axis-label" x="12" y="#{pad[:top] + plot_h / 2}" text-anchor="middle" transform="rotate(-90 12 #{pad[:top] + plot_h / 2})">runs</text>
+            #{bars}
+          </svg>
+        SVG
+      end
+
+      # Simple 2-category grouped bar chart — pass count and fail count side
+      # by side per model, summed across every scenario and mode (see
+      # EvalResults::ModelPassFail / pass_fail_by_model). Distinct from
+      # outcome_bar_chart above: that one facets by scenario and breaks
+      # failures into 6 reasons; this is the coarse "which models are
+      # actually winning" view requested separately — no attempt to filter
+      # out which scenario a pass came from, by design. Reuses
+      # EVAL_STATUS_COLOR (the same pass/fail status colors as the scatter
+      # charts elsewhere on this page) rather than a new palette — it's the
+      # same two-state status encoding, not a new category set.
+      PASS_FAIL_BAR_SLOT = 90
+      PASS_FAIL_CHART_MIN_WIDTH = 300
+
+      def pass_fail_bar_chart(rows, height: 280)
+        rows = rows.reject { |r| r.total.zero? }
+        return "" if rows.empty?
+
+        pad = { left: 42, right: 16, top: 20, bottom: 80 }
+        plot_w = [rows.length * PASS_FAIL_BAR_SLOT, PASS_FAIL_CHART_MIN_WIDTH].max
+        width = pad[:left] + plot_w + pad[:right]
+        plot_h = height - pad[:top] - pad[:bottom]
+
+        bar_w = 26
+        bar_gap = 4
+        max_count = [rows.flat_map { |r| [r.pass_count, r.fail_count] }.max, 1].max
+
+        y_of = ->(v) { (pad[:top] + plot_h - (v.to_f / max_count) * plot_h).round(1) }
+
+        grid = (0..4).map do |i|
+          yt = (max_count * i / 4.0).round
+          y = y_of.call(yt)
+          %(<line class="outcome-grid" x1="#{pad[:left]}" y1="#{y}" x2="#{pad[:left] + plot_w}" y2="#{y}"/>) +
+            %(<text class="outcome-tick" x="#{pad[:left] - 6}" y="#{y + 3}" text-anchor="end">#{yt}</text>)
+        end.join
+
+        bars = rows.each_with_index.map do |r, i|
+          slot_x = pad[:left] + (i * PASS_FAIL_BAR_SLOT)
+          group_w = (bar_w * 2) + bar_gap
+          group_x = slot_x + ((PASS_FAIL_BAR_SLOT - group_w) / 2.0)
+          pass_x = group_x.round(1)
+          fail_x = (group_x + bar_w + bar_gap).round(1)
+
+          pass_y = y_of.call(r.pass_count)
+          fail_y = y_of.call(r.fail_count)
+          base_y = pad[:top] + plot_h
+          pass_h = (base_y - pass_y).round(1)
+          fail_h = (base_y - fail_y).round(1)
+
+          pass_rect = %(<rect class="outcome-seg" x="#{pass_x}" y="#{pass_y}" width="#{bar_w}" height="#{pass_h}" fill="#{EVAL_STATUS_COLOR[:pass]}"><title>#{text_html("Pass: #{r.pass_count} — #{r.model_label}")}</title></rect>)
+          fail_rect = %(<rect class="outcome-seg" x="#{fail_x}" y="#{fail_y}" width="#{bar_w}" height="#{fail_h}" fill="#{EVAL_STATUS_COLOR[:fail]}"><title>#{text_html("Fail: #{r.fail_count} — #{r.model_label}")}</title></rect>)
+          pass_label = r.pass_count.positive? ? %(<text class="outcome-total" x="#{(pass_x + bar_w / 2.0).round(1)}" y="#{pass_y - 4}" text-anchor="middle">#{r.pass_count}</text>) : ""
+          fail_label = r.fail_count.positive? ? %(<text class="outcome-total" x="#{(fail_x + bar_w / 2.0).round(1)}" y="#{fail_y - 4}" text-anchor="middle">#{r.fail_count}</text>) : ""
+
+          label_x = (group_x + group_w / 2.0).round(1)
+          tick_y = base_y + 12
+          axis_label = %(<text class="outcome-axis-tick" x="#{label_x}" y="#{tick_y}" text-anchor="end" transform="rotate(-40 #{label_x} #{tick_y})">#{text_html(r.model_label)}</text>)
+
+          pass_rect + fail_rect + pass_label + fail_label + axis_label
+        end.join
+
+        <<~SVG
+          <svg class="outcome-chart" viewBox="0 0 #{width} #{height}" width="#{width}" height="#{height}" role="img" aria-label="pass vs fail run counts by model, across every scenario and mode">
+            #{grid}
+            <line class="outcome-axis" x1="#{pad[:left]}" y1="#{pad[:top]}" x2="#{pad[:left]}" y2="#{pad[:top] + plot_h}"/>
+            <line class="outcome-axis" x1="#{pad[:left]}" y1="#{pad[:top] + plot_h}" x2="#{pad[:left] + plot_w}" y2="#{pad[:top] + plot_h}"/>
+            <text class="outcome-axis-label" x="12" y="#{pad[:top] + plot_h / 2}" text-anchor="middle" transform="rotate(-90 12 #{pad[:top] + plot_h / 2})">runs</text>
+            #{bars}
+          </svg>
+        SVG
+      end
+
+      # URL-fragment-safe id from arbitrary scenario/model/mode strings
+      # (which contain colons, slashes, dots, spaces — none valid bare in an
+      # HTML id/href fragment). Used by the /evals TOC and each collapsible
+      # group section's anchor — same slug-building logic in both places so
+      # a TOC link always actually lands on its target.
+      def anchor_slug(*parts)
+        parts.join("-").downcase.gsub(/[^a-z0-9]+/, "-").gsub(/-+/, "-").gsub(/\A-|-\z/, "")
+      end
+
+      # Thin accessors so evals.erb (the legend) doesn't reference
+      # LogViz::EvalResults's constants directly — an ERB template compiles
+      # to a method on LogViz::App, which doesn't share app.rb's own lexical
+      # nesting inside `module LogViz`, so a bare EvalResults::OUTCOME_ORDER
+      # in the view raises NameError even though the identical reference
+      # works fine here in app.rb itself. Same reasoning as every other
+      # piece of chart styling already being a helper method rather than a
+      # constant the view reaches into directly (heatmap_fill, scatter_plot).
+      def outcome_categories = EvalResults::OUTCOME_ORDER
+      def outcome_label(category) = EvalResults::OUTCOME_LABELS[category]
+      def outcome_color(category) = OUTCOME_COLORS[category]
     end
 
     get "/" do
@@ -386,6 +577,7 @@ module LogViz
     get "/evals" do
       @groups = EvalResults.groups(EvalResults.load_all(settings.eval_results_dir))
       @heatmaps = EvalResults.heatmaps(@groups)
+      @pass_fail_by_model = EvalResults.pass_fail_by_model(@groups)
       erb :evals
     end
 

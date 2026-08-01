@@ -6,7 +6,7 @@ machine — a wrapper and a default, not a copy: it doesn't duplicate any
 teaching material, it just knows where to look.
 
 ```
-$BOUKENSHA_PATH env var  →  ~/.boukensharc file  →  bundled step (this one)
+$BOUKENSHA_PATH env var  →  $HOME/.boukensharc file  →  bundled step (this one)
 ```
 
 This is separate from `$BOUKENSHA_DIR` (which `Config`/`state.config()`
@@ -75,7 +75,7 @@ the same reason — see "Try it" below for the real way to exercise this.
   `[boukensha] loading from: ...` line — unrelated to `Boukensha.debug!`,
   which gates `Logger.raw()` deep inside the agent loop.
 - **`resolve()` takes injectable `boukensha_path`/`rc_path` parameters**,
-  defaulting to `$BOUKENSHA_PATH`/`~/.boukensharc` — a small addition
+  defaulting to `$BOUKENSHA_PATH`/`$HOME/.boukensharc` — a small addition
   beyond a literal port, needed so tests can exercise every branch without
   mutating real environment variables or writing to the actual user's home
   directory.

@@ -9,7 +9,12 @@ module LogViz
     def scenario = data["scenario"]
     def backend = data["backend"]
     def model = data["model"]
-    def model_label = "#{backend}/#{model}"
+    # score_opencode.py's rows (run_bakery_opencode.py) have no "backend"
+    # key at all — OpenCode's own --model is already a full "provider/model"
+    # string, so there's nothing to prefix. Falling through to the plain
+    # "#{backend}/#{model}" form for those would render a broken leading
+    # slash ("/ollama/qwen3.6:35b-a3b") instead of a real label.
+    def model_label = backend.to_s.empty? ? model.to_s : "#{backend}/#{model}"
     def success? = data["task_success"] == true
     # True when the agent wrote a non-empty output file whose content didn't
     # match the scenario's expected keywords — a real, observed failure mode
@@ -18,12 +23,11 @@ module LogViz
     # plain FAIL (no file at all) since it means the agent substituted
     # plausible-looking content instead of admitting it couldn't finish.
     def fabricated? = data["output_written"] == true && data["content_matched"] == false
-    # False when mud_connect() never once reported success in the session
-    # log (checked from the MUD server's own response text, not anything
-    # the model claimed) — nil (not data-absent, genuinely unknown) for
-    # results written before this check existed. Caught a real incident:
-    # a model whose every mud_connect() attempt timed out still invented a
-    # complete fake bakery menu from scratch and reported the task done.
+    # False when the scorer found no successful authenticated MUD action in
+    # the session log. Evidence may be an explicit mud_connect result or a
+    # successful guard-protected gameplay tool after startup auto-connect.
+    # nil means genuinely unknown for results written before this check.
+    # This caught a model that invented a complete menu without connecting.
     def mud_connected?
       v = data["mud_connected"]
       v.nil? ? nil : v == true
@@ -54,6 +58,25 @@ module LogViz
     # reachable — _driver.py only prints TRACE_ID= when the span it opened
     # actually got a valid (non-no-op) context.
     def trace_id = data["trace_id"]
+
+    # Mutually exclusive bucket for what happened, in priority order (most
+    # fundamental blocker first) — a single run can match more than one flag
+    # (a model that never connected AND got killed by the wall-clock timeout
+    # before it could say so), so this picks one bucket per run for the
+    # outcome chart rather than double-counting it across categories. Order
+    # reflects how these actually chain in practice: a never-connected run
+    # fabricating content is a consequence of not connecting, not a
+    # coincidence alongside it — so never_connected outranks fabricated,
+    # which outranks the generic timing/budget reasons.
+    def outcome_category
+      return :pass if success?
+      return :never_connected if mud_connected? == false
+      return :fabricated if fabricated?
+      return :timed_out if timed_out?
+      return :out_of_budget if hit_turn_limit?
+
+      :other_fail
+    end
     # A final `look` taken right after the trial ends (nil for older results,
     # and for a timed-out trial — SIGKILL doesn't allow _driver.py's own
     # cleanup code to run at all). Raw ANSI-colored MUD text — render with
@@ -97,6 +120,13 @@ module LogViz
     def fabricated_count = runs.count(&:fabricated?)
     def never_connected_count = runs.count { |r| r.mud_connected? == false }
     def last_batch_id = runs.map(&:batch_id).compact.max
+
+    # {category => count} in OUTCOME_ORDER, every category present (0 rather
+    # than absent) so the outcome chart can stack a fixed set of segments per
+    # bar without a nil check per category.
+    def outcome_counts
+      EvalResults::OUTCOME_ORDER.to_h { |cat| [cat, runs.count { |r| r.outcome_category == cat }] }
+    end
   end
 
   # One scenario's model x mode grid — models and modes are only the ones
@@ -109,7 +139,34 @@ module LogViz
     def group_for(model_label, mode) = cells[[model_label, mode]]
   end
 
+  # Coarsest possible view: every task_success result for a model, summed
+  # across every scenario and mode with no attempt to separate them out — a
+  # return_to_midgaard recovery pass counts exactly the same as a bakery
+  # pass here. Deliberately simpler than groups()/EvalGroup, which stay
+  # scenario+mode-scoped for anywhere that distinction actually matters
+  # (the heatmap, the outcome breakdown chart); this is the "which models
+  # are actually winning, roughly" view, not a replacement for those.
+  ModelPassFail = Struct.new(:model_label, :pass_count, :fail_count) do
+    def total = pass_count + fail_count
+  end
+
   module EvalResults
+    # Fixed order, never reordered by count/rank — see EvalRun#outcome_category
+    # for what puts a run in each bucket. Drives both the stacked-bar chart's
+    # segment stacking order and its color assignment (app.rb's
+    # OUTCOME_COLORS, same index order) — a categorical identity encoding,
+    # not a magnitude one, so the order has to stay fixed for color to mean
+    # the same thing across every bar and every render.
+    OUTCOME_ORDER = %i[pass never_connected fabricated timed_out out_of_budget other_fail].freeze
+    OUTCOME_LABELS = {
+      pass: "Pass",
+      never_connected: "Never connected",
+      fabricated: "Fabricated content",
+      timed_out: "Timed out",
+      out_of_budget: "Out of budget",
+      other_fail: "Other fail",
+    }.freeze
+
     def self.load_all(results_dir)
       Dir.glob(File.join(results_dir, "*.jsonl")).sort.flat_map do |path|
         File.readlines(path).filter_map do |line|
@@ -145,6 +202,18 @@ module LogViz
       return [0, 0] if mode == "strict"
 
       [1, mode[/\d+/].to_i]
+    end
+
+    # groups: the same EvalGroup array groups() already produced — reused
+    # rather than re-parsing evals/results/*.jsonl a second time. Each
+    # group already carries success_count/run_count, so this just resums
+    # those across scenario+mode boundaries, grouped by model_label alone.
+    def self.pass_fail_by_model(groups)
+      groups.group_by(&:model_label).map do |model_label, model_groups|
+        pass = model_groups.sum(&:success_count)
+        total = model_groups.sum(&:run_count)
+        ModelPassFail.new(model_label, pass, total - pass)
+      end.sort_by(&:model_label)
     end
 
     def self.heatmaps(groups)

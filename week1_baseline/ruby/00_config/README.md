@@ -1,6 +1,6 @@
 # 00 · Configuration
 
-We want to able to manage all configurations from an external file eg. `~/.boukensha/settings.yaml`
+We want to able to manage all configurations from an external file eg. `$HOME/.boukensha/settings.yaml`
 We want a dedicated class to handle configuration. eg. `Boukensha::Config`
 Please consider that as we add configuration in each iteration we will be updating the configuration schema and class.
 We can hardcode defaults but we should not hardcode configurable values.
@@ -32,7 +32,7 @@ We want to use the standard library as much as possible avoiding external gems. 
 The class looks for a `.boukensha/` directory in this order:
 
 1. **`BOUKENSHA_DIR` env var** — set this to point at any directory you like.
-2. **`~/.boukensha`** — the default location for a real install.
+2. **`$HOME/.boukensha`** — the default location for a real install.
 
 ## Config directory structure
 
@@ -113,7 +113,7 @@ Expected output (values from your `.boukensha/`):
 ```
 === Boukensha Step 0: Configuration ===
 
-Config dir:     /home/andrew/Sites/Claude-Code-Camp/.boukensha
+Config dir:     <user-config-dir>
 Tasks:          player
 
 -- player task --
@@ -127,5 +127,5 @@ MUD user:       dummy
 
 API key set?    true
 
-#<Boukensha::Config dir=/home/andrew/Sites/Claude-Code-Camp/.boukensha tasks=player>
+#<Boukensha::Config dir=<user-config-dir> tasks=player>
 ```
