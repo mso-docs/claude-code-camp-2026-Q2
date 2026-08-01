@@ -44,13 +44,23 @@ Everything below assumes you're in the repo root:
      (separate from whatever scenario was actually requested, so it never
      pollutes that scenario's own stats). If recovery succeeds, the real
      scenario then runs normally, immediately after, in the same batch.
-  3. If recovery *also* fails, `run_once()` raises `RecoveryFailedError`
-     and `run_bakery.py` stops the whole batch outright (after logging the
-     failed recovery attempt) — every remaining trial would otherwise
-     start from the same wrong room, silently invalidating strict-vs-
-     reprompt and model-vs-model comparisons (one run's "task" is quietly
-     easier or harder than another's). At that point a human has to walk
-     the character back by hand — there's no fourth layer.
+  3. `return_to_midgaard.py` gets up to `RECOVERY_ATTEMPTS` (2) tries, each a
+     brand-new subprocess/connection — a single failure is often just a
+     transient MUD hiccup, not a genuinely stuck character, so retrying once
+     before giving up avoids losing an unattended batch to one bad
+     connection.
+  4. If every recovery attempt fails, `run_once()` raises
+     `RecoveryFailedError`. `run_bakery.py` does **not** stop the batch on
+     the first one of these — it logs the failed recovery attempt and moves
+     on to the next repetition, which gets its own fresh preflight check and
+     recovery attempt. Only `CONSECUTIVE_STALL_LIMIT` (3) stalled
+     repetitions *in a row* — no successful trial in between — stops the
+     batch outright. That pattern means something structural is wrong (MUD
+     container down, network dead), not one-off bad luck, and no amount of
+     per-trial retrying fixes it. At that point a human has to check on it
+     (and likely walk the character back by hand) — there's no fifth layer.
+     `PreflightConnectionError` (couldn't even confirm the starting room) is
+     handled the same way, sharing the same stall counter.
 - Only run one eval trial at a time. CircleMUD allows exactly one live
   session per character, and every trial logs in as the same shared
   account (`dummy`, from `.boukensha/settings.yaml`) — the runner already

@@ -35,6 +35,21 @@ DEFAULT_TARGETS = [
     ("ollama", "qwen3.6:35b-a3b"),
 ]
 
+# A RecoveryFailedError or PreflightConnectionError on one repetition doesn't
+# stop the batch by itself — boukensha_agent.run_once() already retries
+# recovery once internally, and the very next repetition gets its own fresh
+# preflight check and recovery attempt anyway, so a single stalled trial is
+# skipped and logged rather than losing an entire unattended overnight run.
+# But CONSECUTIVE_STALL_LIMIT stalls in a row (no successful trial in
+# between) stops the batch outright — that pattern means something
+# structural is wrong (MUD container down, network dead), not a one-off
+# hiccup, and no amount of per-trial retrying will fix it.
+CONSECUTIVE_STALL_LIMIT = 3
+# Same idea as boukensha_agent.RECOVERY_RETRY_SETTLE_SECONDS — give
+# CircleMUD/the MUD container a moment before the next repetition's own
+# preflight check reconnects.
+STALL_BACKOFF_SECONDS = 5
+
 
 def parse_target(spec: str) -> tuple[str, str]:
     backend, _, model = spec.partition(":")
@@ -60,6 +75,8 @@ def main() -> int:
     results_path = RESULTS_DIR / "bakery.jsonl"
     batch_id = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
 
+    consecutive_stalls = 0
+
     with results_path.open("a") as out:
         for backend, model in targets:
             for max_reprompts in reprompt_modes:
@@ -74,34 +91,63 @@ def main() -> int:
                             timeout=args.timeout, max_reprompts=max_reprompts,
                         )
                     except boukensha_agent.RecoveryFailedError as e:
-                        # Room mismatch AND the agent's own attempt to
-                        # navigate back to The Temple Of Midgaard also failed — self-
-                        # healing has been tried, not just skipped. Every
-                        # remaining trial in this batch would start from the
-                        # same wrong room, so stop outright rather than
-                        # write more results against a starting condition
-                        # already known to be invalid. The failed recovery
-                        # attempt itself is still logged, though — it's a
-                        # real trial that really ran.
+                        # Room mismatch AND every retried attempt to navigate
+                        # back to The Temple Of Midgaard also failed. Rather
+                        # than stopping the whole batch on one stalled
+                        # repetition, log the failed recovery attempt (a real
+                        # trial that really ran) and move on — the next
+                        # repetition gets its own fresh preflight check and
+                        # recovery attempt, so a transient hiccup here doesn't
+                        # have to end the night. CONSECUTIVE_STALL_LIMIT in a
+                        # row is the actual stop condition; see its comment.
                         recovery_score = score.score_run(return_to_midgaard, e.recovery_result)
                         recovery_score["batch_id"] = batch_id
                         recovery_score["scenario"] = "return_to_midgaard"
                         recovery_score["repetition"] = rep
                         out.write(json.dumps(recovery_score) + "\n")
                         out.flush()
-                        print(f"\n*** BATCH STOPPED — {e}\n", file=sys.stderr)
-                        print(f"Results so far (including the failed recovery attempt) are in {results_path}", file=sys.stderr)
-                        return 1
+                        consecutive_stalls += 1
+                        print(
+                            f"[{backend}:{model} {mode_label} rep {rep}] RECOVERY FAILED "
+                            f"({consecutive_stalls}/{CONSECUTIVE_STALL_LIMIT} in a row) — {e}",
+                            file=sys.stderr,
+                        )
+                        if consecutive_stalls >= CONSECUTIVE_STALL_LIMIT:
+                            print(
+                                f"\n*** BATCH STOPPED — {CONSECUTIVE_STALL_LIMIT} stalled repetitions in a row. "
+                                "That's not one-off bad luck — something structural is likely wrong (MUD container "
+                                "down, network dead) and a human needs to check on it before more trials would help.\n",
+                                file=sys.stderr,
+                            )
+                            print(f"Results so far (including failed recovery attempts) are in {results_path}", file=sys.stderr)
+                            return 1
+                        time.sleep(STALL_BACKOFF_SECONDS)
+                        continue
                     except boukensha_agent.PreflightConnectionError as e:
                         # Couldn't even confirm the starting room — a
                         # connection hiccup, not a real trial outcome.
-                        # Nothing to log (no trial actually ran); stop
-                        # cleanly rather than crash with a raw traceback or
-                        # press on against an unconfirmed starting position.
-                        print(f"\n*** BATCH STOPPED — {e}\n", file=sys.stderr)
-                        print(f"Results so far (if any) are in {results_path}", file=sys.stderr)
-                        return 1
+                        # Nothing to log (no trial actually ran); skip this
+                        # repetition the same way as a failed recovery,
+                        # subject to the same circuit breaker.
+                        consecutive_stalls += 1
+                        print(
+                            f"[{backend}:{model} {mode_label} rep {rep}] CONNECTION CHECK FAILED "
+                            f"({consecutive_stalls}/{CONSECUTIVE_STALL_LIMIT} in a row) — {e}",
+                            file=sys.stderr,
+                        )
+                        if consecutive_stalls >= CONSECUTIVE_STALL_LIMIT:
+                            print(
+                                f"\n*** BATCH STOPPED — {CONSECUTIVE_STALL_LIMIT} stalled repetitions in a row. "
+                                "That's not one-off bad luck — something structural is likely wrong (MUD container "
+                                "down, network dead) and a human needs to check on it before more trials would help.\n",
+                                file=sys.stderr,
+                            )
+                            print(f"Results so far (if any) are in {results_path}", file=sys.stderr)
+                            return 1
+                        time.sleep(STALL_BACKOFF_SECONDS)
+                        continue
 
+                    consecutive_stalls = 0
                     for scenario_module, run_result in trial_results:
                         result = score.score_run(scenario_module, run_result)
                         result["batch_id"] = batch_id

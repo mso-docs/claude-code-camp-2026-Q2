@@ -281,6 +281,21 @@ def _run_trial(
 # its own room to fail before giving up.
 RECOVERY_MAX_REPROMPTS = 1
 
+# A single recovery attempt occasionally loses to a transient MUD hiccup
+# rather than a genuinely hard-to-reach starting position — the exact
+# "already open" connection bug fixed in mud_manager/session.py looked
+# indistinguishable from a real failure until it was traced down. Giving
+# recovery one extra fresh attempt (a brand-new subprocess and Session) before
+# calling it failed avoids losing an entire unattended batch to one bad
+# connection. run_bakery.py's own consecutive-failure circuit breaker is the
+# backstop for when retrying here isn't enough.
+RECOVERY_ATTEMPTS = 2
+
+# Same rationale as check_starting_room()'s SETTLE_SECONDS: give CircleMUD a
+# moment to finish tearing down the previous descriptor before the next
+# attempt's mud_connect() lands.
+RECOVERY_RETRY_SETTLE_SECONDS = 3
+
 
 def run_once(
     scenario,
@@ -305,12 +320,15 @@ def run_once(
     If scenario.EXPECTED_START_ROOM is set and the character isn't there,
     this doesn't just fail the trial or abort the batch outright — it first
     runs return_to_midgaard.py as a recovery attempt (the agent navigating
-    itself back, using the same look/move tools any scenario uses), and
-    only raises RecoveryFailedError if *that* also fails to reach Temple
-    Square. There's no recall/teleport on this MUD, so this is the only
-    automated recovery available; callers (run_bakery.py) should let
-    RecoveryFailedError stop the whole batch, since every remaining trial
-    would otherwise also start from the same wrong room.
+    itself back, using the same look/move tools any scenario uses), up to
+    RECOVERY_ATTEMPTS times (a fresh subprocess/Session each try, in case the
+    first failure was just a flaky connection), and only raises
+    RecoveryFailedError if every attempt fails to reach Temple Of Midgaard.
+    There's no recall/teleport on this MUD, so this is the only automated
+    recovery available. Callers (run_bakery.py) don't have to treat a single
+    RecoveryFailedError as fatal — see its own circuit breaker for handling
+    a genuinely stuck run without losing an entire unattended batch to one
+    bad trial.
 
     Returns a list of (scenario_module, run_result) pairs — normally just
     `[(scenario, result)]`, but `[(return_to_midgaard, recovery_result),
@@ -347,14 +365,22 @@ def run_once(
             mud=resolved_mud, timeout=timeout, max_reprompts=max_reprompts,
         ))]
 
-    recovery_result = _run_trial(
-        return_to_midgaard, backend=backend, model=model,
-        run_dir=Path(run_dir) / "recovery", mud=resolved_mud,
-        timeout=timeout, max_reprompts=RECOVERY_MAX_REPROMPTS,
-    )
-    recovered = bool(recovery_result.get("final_room")) and (
-        return_to_midgaard.SUCCESS_ROOM.lower() in recovery_result["final_room"].lower()
-    )
+    recovery_result = None
+    recovered = False
+    for attempt in range(1, RECOVERY_ATTEMPTS + 1):
+        suffix = "recovery" if attempt == 1 else f"recovery{attempt}"
+        recovery_result = _run_trial(
+            return_to_midgaard, backend=backend, model=model,
+            run_dir=Path(run_dir) / suffix, mud=resolved_mud,
+            timeout=timeout, max_reprompts=RECOVERY_MAX_REPROMPTS,
+        )
+        recovered = bool(recovery_result.get("final_room")) and (
+            return_to_midgaard.SUCCESS_ROOM.lower() in recovery_result["final_room"].lower()
+        )
+        if recovered:
+            break
+        if attempt < RECOVERY_ATTEMPTS:
+            time.sleep(RECOVERY_RETRY_SETTLE_SECONDS)
     if not recovered:
         raise RecoveryFailedError(recovery_result)
 

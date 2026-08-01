@@ -58,13 +58,22 @@ class Session:
         self._logged_in = False
 
     def open(self) -> "Session":
-        if self._socket:
+        if self.is_open():
             raise Error("already open")
+        # A previous socket may still be sitting in self._socket here even
+        # though is_open() says False: on a passive disconnect (server
+        # dropped the connection), the reader thread's own exit path sets
+        # self._closed but can't null self._socket itself (that would race
+        # close()'s join of this same thread). Reassigning below discards
+        # that stale reference — nothing else still needs it once
+        # is_open() has already reported closed.
         try:
             self._socket = socket.create_connection((self.host, self.port))
         except OSError as e:
             raise ConnectionError(f"connect {self.host}:{self.port} failed: {e}") from e
         self._closed = False
+        self._buffer = ""
+        self._last_recv_at = None
         self._start_reader()
         return self
 
@@ -158,7 +167,8 @@ class Session:
         if not self.is_open():
             raise Error("session not open")
         regexp = pattern if isinstance(pattern, re.Pattern) else re.compile(re.escape(pattern))
-        deadline = self._monotime() + (timeout if timeout is not None else self._timeout)
+        effective_timeout = timeout if timeout is not None else self._timeout
+        deadline = self._monotime() + effective_timeout
         with self._cond:
             while True:
                 m = regexp.search(self._buffer)
@@ -169,7 +179,7 @@ class Session:
                     return out
                 remaining = deadline - self._monotime()
                 if remaining <= 0:
-                    raise Timeout(f"read_until {pattern!r} after {timeout}s")
+                    raise Timeout(f"read_until {pattern!r} after {effective_timeout}s")
                 if self._closed:
                     raise ConnectionError("socket closed while waiting")
                 self._cond.wait(remaining)
