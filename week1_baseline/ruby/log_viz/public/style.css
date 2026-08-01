@@ -27,6 +27,9 @@ body {
 .topbar {
   background: #1f2328;
   padding: 0.75rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .topbar .brand {
@@ -34,6 +37,17 @@ body {
   font-weight: 600;
   text-decoration: none;
   font-size: 1.1rem;
+}
+
+.topnav a {
+  color: #c2c8d0;
+  text-decoration: none;
+  font-size: 0.9rem;
+  margin-left: 1.25rem;
+}
+
+.topnav a:hover {
+  color: #fff;
 }
 
 main {
@@ -65,7 +79,9 @@ h1 {
   margin-bottom: 1.5rem;
 }
 
-table.sessions {
+table.sessions,
+table.eval-groups,
+table.eval-runs {
   width: 100%;
   border-collapse: collapse;
   background: var(--panel);
@@ -75,34 +91,148 @@ table.sessions {
 }
 
 table.sessions th,
-table.sessions td {
+table.sessions td,
+table.eval-groups th,
+table.eval-groups td,
+table.eval-runs th,
+table.eval-runs td {
   padding: 0.6rem 0.8rem;
   border-bottom: 1px solid var(--border);
   text-align: left;
   font-size: 0.9rem;
 }
 
-table.sessions th {
+table.sessions th,
+table.eval-groups th,
+table.eval-runs th {
   background: #f0f2f5;
   font-weight: 600;
 }
 
-table.sessions tr:last-child td {
+table.sessions tr:last-child td,
+table.eval-groups tr:last-child td,
+table.eval-runs tr:last-child td {
   border-bottom: none;
 }
 
-table.sessions tr:hover {
+table.sessions tr:hover,
+table.eval-groups tr:hover,
+table.eval-runs tr:hover {
   background: #f6f8fa;
 }
 
-table.sessions a {
+table.sessions a,
+table.eval-groups a,
+table.eval-runs a {
   color: var(--accent);
   text-decoration: none;
   font-family: ui-monospace, monospace;
 }
 
-table.sessions a:hover {
+table.sessions a:hover,
+table.eval-groups a:hover,
+table.eval-runs a:hover {
   text-decoration: underline;
+}
+
+.scatter-wrap {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.75rem 1rem 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.scatter {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.scatter-grid {
+  stroke: #e1e0d9;
+  stroke-width: 1;
+}
+
+.scatter-axis {
+  stroke: #c3c2b7;
+  stroke-width: 1;
+}
+
+.scatter-tick,
+.scatter-axis-label {
+  fill: #898781;
+  font-size: 9px;
+  font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+}
+
+.scatter-axis-label {
+  font-size: 10px;
+}
+
+.scatter-dot {
+  /* No stroke ring — it was meant to separate overlapping points but did
+     the opposite: a solid ring painted over whatever was underneath just
+     made a cluster of near-identical points look like a blob of rings
+     instead of showing that multiple runs landed close together. Partial
+     fill opacity instead: overlapping dots visibly darken where they
+     stack, which is the actual signal worth seeing here. */
+  fill-opacity: 0.65;
+}
+
+.scatter-legend {
+  display: flex;
+  gap: 1.25rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  padding: 0 0.25rem 0.5rem;
+}
+
+.scatter-legend .dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-right: 0.35rem;
+  vertical-align: middle;
+}
+
+.scatter-legend .dot-pass {
+  background: #0ca30c;
+}
+
+.scatter-legend .dot-fail {
+  background: #d03b3b;
+}
+
+.room-text {
+  margin-top: 0.35rem;
+  padding: 0.5rem 0.6rem;
+  background: #1f2328;
+  border-radius: 4px;
+  font-family: ui-monospace, monospace;
+  font-size: 0.8rem;
+  white-space: pre-wrap;
+  max-width: 32rem;
+}
+
+.badge-pass,
+.badge-fail {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.badge-pass {
+  background: #dcf5e0;
+  color: #1e7a33;
+}
+
+.badge-fail {
+  background: #fbe1e1;
+  color: var(--danger);
 }
 
 .task-name,
@@ -549,6 +679,129 @@ table.sessions a:hover {
   line-height: 1.4;
   overflow-x: auto;
   white-space: pre-wrap;
+}
+
+/* View toggle (Transcript / Story view) */
+.view-toggle {
+  font-size: 0.85rem;
+  margin-top: -0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.view-toggle a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.view-toggle a:hover {
+  text-decoration: underline;
+}
+
+.view-toggle .current {
+  font-weight: 600;
+}
+
+.story-note {
+  font-size: 0.82rem;
+  color: var(--muted);
+  font-style: italic;
+  margin-bottom: 1.25rem;
+}
+
+/* Story view — one beat per turn */
+.story {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.beat {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.beat-turn {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.beat-prompt {
+  font-size: 1.05rem;
+  font-style: italic;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.beat-thinking,
+.beat-action {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #f6f7f9;
+}
+
+.beat-thinking summary,
+.beat-action summary {
+  padding: 0.4rem 0.7rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: ui-monospace, monospace;
+}
+
+.beat-action-error {
+  border-color: #d9534f;
+}
+
+.beat-action-error summary {
+  color: #8a2e00;
+}
+
+.beat-thought {
+  padding: 0.6rem 0.9rem;
+  border-top: 1px solid var(--border);
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+
+.beat-thought-label {
+  display: block;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin-bottom: 0.2rem;
+}
+
+.beat-outcome {
+  background: var(--assistant-bg);
+  border-radius: 6px;
+  padding: 0.75rem 0.9rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.beat-foot {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.beat-foot.danger {
+  color: var(--danger);
+}
+
+.story-link {
+  margin-left: 0.5rem;
+  font-size: 0.8rem;
 }
 
 /* ANSI styles */

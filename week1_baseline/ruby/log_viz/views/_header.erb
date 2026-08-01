@@ -1,0 +1,111 @@
+<%
+  # Regular /sessions/:id routes leave these unset — default to the
+  # session-index scheme they've always used. /evals/runs/* routes set all
+  # five explicitly, since @session.id (just the log's basename, "session"
+  # for every eval run) isn't unique or meaningful there.
+  @back_path       ||= "/"
+  @back_label      ||= "All sessions"
+  @header_title    ||= "Session #{@session.id}"
+  @transcript_path ||= "/sessions/#{@session.id}"
+  @story_path      ||= "/sessions/#{@session.id}/story"
+%>
+<a href="<%= @back_path %>" class="back">&larr; <%= @back_label %></a>
+
+<h1><%= @header_title %></h1>
+<p class="meta">
+  Started <%= format_time(@session.started_at) %>
+</p>
+
+<p class="view-toggle">
+  <% if @current_view == :transcript %>
+    <span class="current">Transcript</span>
+  <% else %>
+    <a href="<%= @transcript_path %>">Transcript</a>
+  <% end %>
+  &middot;
+  <% if @current_view == :story %>
+    <span class="current">Story view</span>
+  <% else %>
+    <a href="<%= @story_path %>">Story view</a>
+  <% end %>
+</p>
+
+<% if @session.end_reason %>
+  <% if @session.stopped? %>
+    <div class="banner banner-warn">&#9888; stopped: <%= @session.end_reason %></div>
+  <% else %>
+    <div class="banner banner-ok">&#10003; completed</div>
+  <% end %>
+<% end %>
+
+<div class="statstrip">
+  <div class="statstrip-head">
+    <span class="statstrip-model">
+      <%= @session.model_summary %>
+    </span>
+    <span class="statstrip-cost">cost &asymp; <%= fmt_cost(@session.estimated_cost) %></span>
+  </div>
+
+  <% if @session.context_window && @session.context_window.to_i > 0 %>
+    <%= progress_bar(@session.peak_input_tokens, @session.context_window,
+                     label: "Peak context &middot; #{fmt_tokens(@session.peak_input_tokens)} / #{fmt_tokens(@session.context_window)} (#{pct(@session.peak_input_tokens, @session.context_window)}%)") %>
+  <% end %>
+
+  <% largest = @session.largest_turn %>
+  <% if @session.max_turn_tokens && @session.max_turn_tokens.to_i > 0 && largest %>
+    <% tripped = @session.turns.any? { |t| t[:reason] == "max_tokens" } %>
+    <%= progress_bar(largest[:tokens], @session.max_turn_tokens,
+                     label: "Largest turn &middot; #{fmt_tokens(largest[:tokens])} / #{fmt_tokens(@session.max_turn_tokens)} (#{pct_raw(largest[:tokens], @session.max_turn_tokens)}%#{" &#9888; max_tokens" if tripped})",
+                     danger: tripped) %>
+  <% end %>
+
+  <% busiest = @session.busiest_turn %>
+  <% if @session.iteration_max && busiest %>
+    <%= progress_bar(busiest[:iterations], @session.iteration_max,
+                     label: "Iterations &middot; #{busiest[:iterations]} / #{@session.iteration_max} (turn #{busiest[:n]})",
+                     danger: @session.any_limit_tripped? && busiest[:reason] == "max_iterations") %>
+  <% end %>
+
+  <div class="statstrip-total">
+    Session total: <%= fmt_tokens(@session.total_input_tokens) %> tok in
+    &middot; <%= fmt_tokens(@session.total_output_tokens) %> tok out
+    &middot; across <%= @session.turn_count_real %> turn<%= "s" unless @session.turn_count_real == 1 %>
+  </div>
+</div>
+
+<% if @session.cost_breakdown.any? %>
+  <div class="breakdown">
+    <div class="breakdown-title">Cost by task / provider / model</div>
+    <table class="breakdown-table">
+      <thead>
+        <tr>
+          <th>Task</th>
+          <th>Provider</th>
+          <th>Model</th>
+          <th class="nowrap">Calls</th>
+          <th class="nowrap">Tokens</th>
+          <th class="nowrap">Cost</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @session.cost_breakdown.each do |row| %>
+          <tr>
+            <td><%= row[:task] %></td>
+            <td><%= row[:provider] %></td>
+            <td><%= row[:model] %></td>
+            <td class="nowrap"><%= row[:calls] %></td>
+            <td class="nowrap"><%= fmt_tokens(row[:input]) %> / <%= fmt_tokens(row[:output]) %></td>
+            <td class="nowrap"><%= fmt_cost_cell(row[:cost], known: row[:cost_known]) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>
+
+<% if @session.usage_series.length > 1 %>
+  <div class="spark-wrap">
+    <div class="spark-label">input tokens / iteration &middot; peak <%= fmt_tokens(@session.peak_input_tokens) %></div>
+    <%= sparkline(@session.usage_series, max: @session.peak_input_tokens) %>
+  </div>
+<% end %>

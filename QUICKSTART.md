@@ -26,6 +26,13 @@ LOG_VIZ_SESSIONS_DIR="$(pwd)/../../../.boukensha/sessions" bundle exec ruby bin/
 
 ```
 
+Each session has two views: the default chronological **transcript**, and
+an experimental **Story view** (one narrative beat per turn, with
+reasoning/tool details collapsed by default) at `/sessions/:id/story` — or
+click "Story view" in the toggle under a session's header. See
+[docs/plans/15_otel_tracing.md](docs/plans/15_otel_tracing.md) for what
+it's comparing against and why.
+
 ## 1. Set your API key
 
 A config directory already exists at `.boukensha/` in the repo root
@@ -113,6 +120,59 @@ export BOUKENSHA_DIR="$(pwd)/.boukensha"
 
 (First run does `uv sync` automatically and creates a `.venv` under
 `week1_baseline/python/12_context/`.)
+
+## 4. (Optional) OpenTelemetry tracing
+
+The agent can emit distributed traces — one span per turn, per
+agent-loop iteration, per tool call, and per LLM request — to a local
+OpenTelemetry Collector that fans out to both Jaeger and Grafana Tempo,
+so you can compare the two trace UIs against each other and against the
+`log_viz` transcript view. See
+[docs/plans/15_otel_tracing.md](docs/plans/15_otel_tracing.md) for the
+full design; this is the short version.
+
+Bring the stack up (adds four containers alongside `circlemud`; leave
+these services off `docker compose up` entirely if you don't want them
+running):
+
+```bash
+cd week0_explore/infrastructure
+docker compose up -d otel-collector jaeger tempo grafana
+```
+
+Point the agent at the collector and run it as usual:
+
+```bash
+export OTEL_EXPORTER_OTLP_ENDPOINT="http://localhost:4318"
+export BOUKENSHA_DIR="$(pwd)/.boukensha"
+./week1_baseline/python/bin/12_context --no-tui
+```
+
+Have a conversation with the agent (a couple of turns, ideally including
+at least one tool call), then inspect the trace:
+
+- **Jaeger UI** — <http://localhost:16686> — select service
+  `boukensha-agent`, find the recent trace.
+- **Grafana** — <http://localhost:3001> — Tempo is pre-provisioned as a
+  datasource; use Explore → Tempo → search by service name.
+
+Unset `OTEL_EXPORTER_OTLP_ENDPOINT` (or just don't set it) to run with
+tracing off — the instrumentation is a no-op with no collector configured,
+so there's no need to strip anything out for a normal session.
+
+## 5. (Optional) Running evals
+
+Repeatable, scored task runs against the agent (fixed scenario + turn
+budget + a deterministic pass/fail check from game state, no LLM judge),
+across models and repetitions, viewable as a dashboard in `log_viz`. See
+[evals/README.md](evals/README.md) for the full guide; the short version:
+
+```bash
+python3 evals/run_bakery.py            # runs the bakery scenario, 5 reps, both budget modes
+```
+
+Then view results at `http://localhost:4567/evals` (same `log_viz` server
+as above — start it with `LOG_VIZ_EVAL_RESULTS_DIR` set too, see the guide).
 
 ## Things worth knowing once you're in
 

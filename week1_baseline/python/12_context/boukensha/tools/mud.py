@@ -101,8 +101,18 @@ def register(registry, *, name: str, password: str, host: str = "localhost", por
         if session.is_open() and session.is_logged_in():
             return f"already connected to {session.host}:{session.port}"
         try:
-            if not session.is_open():
-                session.open()
+            if session.is_open():
+                # Open but not logged in — a previous connect/login attempt
+                # (this trial's own auto-connect at registration, or an
+                # earlier failed mud_connect() call) left the socket in a
+                # half-worked state without ever completing login. Retrying
+                # login() on that same socket repeats the identical failure
+                # every time — it's not a fresh attempt, it's the same
+                # broken connection asked the same question again. Starting
+                # from a clean socket is what actually makes a retry a
+                # retry.
+                session.close()
+            session.open()
             welcome = session.login(name, password)
             return f"connected to {session.host}:{session.port}\n{welcome}"
         except SessionError as e:

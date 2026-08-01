@@ -1,0 +1,64 @@
+<%= erb :_header, layout: false %>
+
+<p class="story-note">
+  Prototype view — one narrative <em>beat</em> per turn instead of a flat
+  event log. Reasoning and tool mechanics are folded behind
+  <code>&lt;details&gt;</code> toggles so the main thread reads as what
+  happened, not how.
+</p>
+
+<div class="story">
+  <% @session.beats.each do |beat| %>
+    <div class="beat">
+      <div class="beat-turn">Turn <%= beat.turn %></div>
+
+      <% if beat.user_text %>
+        <div class="beat-prompt">&#8220;<%= text_html(beat.user_text) %>&#8221;</div>
+      <% end %>
+
+      <% if beat.thinking.any? %>
+        <details class="beat-thinking">
+          <summary>&#129504; <%= beat.thinking.length %> thought<%= "s" unless beat.thinking.length == 1 %></summary>
+          <% beat.thinking.each do |t| %>
+            <div class="beat-thought">
+              <% if t.type == :plan %>
+                <span class="beat-thought-label">plan</span>
+              <% else %>
+                <span class="beat-thought-label">reasoning</span>
+              <% end %>
+              <% if t.redacted || t.text.to_s.strip.empty? %>
+                <span class="muted">(hidden)</span>
+              <% else %>
+                <%= text_html(t.text) %>
+              <% end %>
+            </div>
+          <% end %>
+        </details>
+      <% end %>
+
+      <% beat.tool_calls.each do |call| %>
+        <details class="beat-action<%= " beat-action-error" unless call.tool_ok %>">
+          <summary>
+            &#9881; <%= call.tool_name %>(<%= format_args(call.tool_args) %>)
+            <% unless call.tool_ok %><span class="tool-badge">error</span><% end %>
+          </summary>
+          <pre class="tool-result"><%= ansi_html(call.tool_result) %></pre>
+        </details>
+      <% end %>
+
+      <% if beat.final_text %>
+        <div class="beat-outcome"><%= text_html(beat.final_text) %></div>
+      <% end %>
+
+      <% if beat.turn_end %>
+        <% tripped = @session.limit_reason?(beat.turn_end.reason) %>
+        <div class="beat-foot<%= " danger" if tripped %>">
+          <%= tripped ? "&#9888;" : "&#10003;" %>
+          <%= beat.turn_end.iterations %> iteration<%= "s" unless beat.turn_end.iterations == 1 %>
+          <% if beat.turn_end.tokens %>&middot; <%= fmt_tokens(beat.turn_end.tokens) %> tok<% end %>
+          <% if tripped %>&middot; <%= beat.turn_end.reason %><% end %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+</div>

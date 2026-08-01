@@ -30,3 +30,4 @@ these plans don't follow the reference-diff format above.
 
 - [13 · Structured Knowledge Base & Observability Dashboard](13_knowledge_observability.md)
 - [14 · Navigator Tool — Semantic Matching, Weighted Pathing & Reasoned Targets](14_navigator_tool.md)
+- [15 · OpenTelemetry Tracing & Error Logs](15_otel_tracing.md)

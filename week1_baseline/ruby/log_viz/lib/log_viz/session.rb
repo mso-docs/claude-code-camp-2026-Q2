@@ -188,6 +188,31 @@ module LogViz
          tokens: @total_input_tokens + @total_output_tokens, reason: end_reason }]
     end
 
+    # ---- narrative grouping (Story view) ---------------------------------
+    # One Beat per turn: the same entries the transcript renders flat and
+    # chronological, regrouped around what a turn was *for* — the user's
+    # ask, what the agent thought/did to answer it, and how it landed —
+    # rather than the raw event-by-event order they were logged in.
+    Beat = Struct.new(:turn, :user_text, :thinking, :tool_calls, :final_text, :turn_end,
+                      keyword_init: true)
+
+    def beats
+      turn_ends_by_turn = turn_ends.each_with_object({}) { |e, h| h[e.turn] = e }
+
+      entries.group_by(&:turn).sort.map do |turn, turn_entries|
+        Beat.new(
+          turn: turn,
+          user_text: turn_entries.find { |e| e.type == :user }&.text,
+          thinking: turn_entries.select { |e| e.type == :reasoning || e.type == :plan },
+          tool_calls: turn_entries.select { |e| e.type == :tool },
+          final_text: turn_entries.reverse.find do |e|
+            e.type == :assistant && e.stop_reason != "tool_use" && !e.text.to_s.start_with?("(tool use")
+          end&.text,
+          turn_end: turn_ends_by_turn[turn]
+        )
+      end
+    end
+
     def limit_reason?(reason) = !reason.nil? && reason != "completed"
 
     # Worst turn by token spend — the one closest to (or over) the cap.

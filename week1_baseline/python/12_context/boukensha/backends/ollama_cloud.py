@@ -71,6 +71,10 @@ class OllamaCloud(Base):
             "think": False,
             "messages": self.to_messages(context.system, context.messages),
             "tools": self.to_tools(context.tools) if tools is None else tools,
+            # See Ollama.to_payload()'s comment — without this, the server's
+            # own runtime default context (not context.context_window) is
+            # what actually gets honored.
+            "options": {"num_ctx": context.context_window},
         }
 
     def headers(self) -> dict:
@@ -106,6 +110,14 @@ class OllamaCloud(Base):
             )
 
         return {"stop_reason": "tool_use" if tool_calls else "end_turn", "content": content}
+
+    def usage(self, response: dict) -> dict:
+        """Same /api/chat shape as the local Ollama backend — no "usage" key,
+        top-level prompt_eval_count/eval_count instead (see Base.usage())."""
+        return {
+            "input_tokens": response.get("prompt_eval_count") or 0,
+            "output_tokens": response.get("eval_count") or 0,
+        }
 
     def _assistant_message(self, content) -> dict:
         """Rebuilds an Ollama assistant message from normalized content blocks

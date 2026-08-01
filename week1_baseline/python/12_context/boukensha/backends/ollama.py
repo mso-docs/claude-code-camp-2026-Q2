@@ -24,6 +24,16 @@ class Ollama(Base):
             "cost_per_million": {"input": 0.0, "output": 0.0},
             "usage_unit": "local_compute",
         },
+        # For fast eval iteration (evals/README.md) — same Qwen family as
+        # qwen3.6:27b/qwen3.6:35b-a3b above, already proved out for
+        # tool-calling in this harness, at a fraction of the size/latency.
+        # Context window is a rough estimate like the others above, not
+        # vendor-confirmed.
+        "qwen3.5:4b": {
+            "context_window": 128_000,
+            "cost_per_million": {"input": 0.0, "output": 0.0},
+            "usage_unit": "local_compute",
+        },
     }
 
     def __init__(self, *, model: str, host: str = "http://localhost:11434") -> None:
@@ -69,6 +79,18 @@ class Ollama(Base):
             "think": False,
             "messages": self.to_messages(context.system, context.messages),
             "tools": self.to_tools(context.tools) if tools is None else tools,
+            # Without this, Ollama silently serves the request at its own
+            # runtime default context (commonly 4096, sometimes less) —
+            # unrelated to and much smaller than context.context_window,
+            # the figure Context's own compaction bookkeeping (compaction_
+            # threshold, needs_compaction()) is measured against. That
+            # mismatch means boukensha thinks it has room and never
+            # compacts, while Ollama is quietly truncating/losing earlier
+            # messages well before that — the likely real cause behind a
+            # small local model "failing" after only a few tool calls, not
+            # actually the max_turn_tokens circuit breaker. This makes the
+            # two agree.
+            "options": {"num_ctx": context.context_window},
         }
 
     def headers(self) -> dict:
@@ -101,6 +123,14 @@ class Ollama(Base):
             )
 
         return {"stop_reason": "tool_use" if tool_calls else "end_turn", "content": content}
+
+    def usage(self, response: dict) -> dict:
+        """Ollama's /api/chat has no "usage" key at all — token counts are
+        top-level prompt_eval_count/eval_count instead (see Base.usage())."""
+        return {
+            "input_tokens": response.get("prompt_eval_count") or 0,
+            "output_tokens": response.get("eval_count") or 0,
+        }
 
     def _assistant_message(self, content) -> dict:
         """Rebuilds an Ollama assistant message from normalized content blocks
