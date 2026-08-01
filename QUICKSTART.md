@@ -160,6 +160,20 @@ Unset `OTEL_EXPORTER_OTLP_ENDPOINT` (or just don't set it) to run with
 tracing off — the instrumentation is a no-op with no collector configured,
 so there's no need to strip anything out for a normal session.
 
+## 5. (Optional) Running evals
+
+Repeatable, scored task runs against the agent (fixed scenario + turn
+budget + a deterministic pass/fail check from game state, no LLM judge),
+across models and repetitions, viewable as a dashboard in `log_viz`. See
+[evals/README.md](evals/README.md) for the full guide; the short version:
+
+```bash
+python3 evals/run_bakery.py            # runs the bakery scenario, 5 reps, both budget modes
+```
+
+Then view results at `http://localhost:4567/evals` (same `log_viz` server
+as above — start it with `LOG_VIZ_EVAL_RESULTS_DIR` set too, see the guide).
+
 ## Things worth knowing once you're in
 
 - **Tools**: file-system tools (`pwd`, `read_file`, `write_file`,

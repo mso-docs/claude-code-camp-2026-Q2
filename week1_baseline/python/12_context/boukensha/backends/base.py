@@ -84,6 +84,17 @@ class Base:
     def usage_level(self) -> str | None:
         return self.model_info.get("usage_level")
 
+    def usage(self, response: dict) -> dict:
+        """Normalizes a raw API response's token counts into {"input_tokens":,
+        "output_tokens":}. Client.call() returns the provider's raw JSON
+        unmodified (no parse_response()-style normalization pass), so this is
+        read directly off that raw shape — the default assumes a top-level
+        "usage" key already in {"input_tokens":, "output_tokens":} form,
+        which is true for Anthropic's Messages API as-is. Backends whose raw
+        response doesn't match (Ollama's prompt_eval_count/eval_count, no
+        "usage" key at all) override this."""
+        return response.get("usage") or {}
+
     def estimate_cost(self, *, input_tokens: int, output_tokens: int) -> float | None:
         in_cost = self.input_token_cost_per_million
         out_cost = self.output_token_cost_per_million

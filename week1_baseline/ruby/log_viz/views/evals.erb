@@ -1,0 +1,167 @@
+<h1>Evals</h1>
+
+<% if @groups.empty? %>
+  <p class="empty">No eval results found in <code><%= settings.eval_results_dir %></code>. Run <code>python3 evals/run_bakery.py</code> to generate some.</p>
+<% else %>
+  <table class="eval-groups">
+    <thead>
+      <tr>
+        <th>Scenario</th>
+        <th>Model</th>
+        <th>Mode</th>
+        <th class="nowrap">Runs</th>
+        <th class="nowrap">Success rate</th>
+        <th class="nowrap">Avg iterations</th>
+        <th class="nowrap">Avg reprompts used</th>
+        <th class="nowrap">Avg tool calls</th>
+        <th class="nowrap">Avg duration</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @groups.each do |group| %>
+        <tr>
+          <td><%= group.scenario %></td>
+          <td class="model-list"><%= group.model_label %></td>
+          <td class="nowrap"><%= group.mode %></td>
+          <td class="nowrap"><%= group.run_count %></td>
+          <td class="nowrap"><%= group.success_count %>/<%= group.run_count %> (<%= group.success_rate.round %>%)</td>
+          <td class="nowrap">
+            <% if group.avg_iterations %>
+              <%= progress_bar(group.avg_iterations, group.typical_max_iterations, label: "#{group.avg_iterations.round(1)}/#{group.typical_max_iterations}") %>
+            <% else %>&mdash;<% end %>
+          </td>
+          <td class="nowrap"><%= group.avg_reprompts_used ? group.avg_reprompts_used.round(1) : "&mdash;" %></td>
+          <td class="nowrap"><%= group.avg_tool_calls.round(1) %></td>
+          <td class="nowrap"><%= group.avg_duration_s.round(1) %>s</td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <% @heatmaps.each do |hm| %>
+    <h2><%= hm.scenario %> &mdash; success rate by model &times; mode</h2>
+    <div class="heatmap-wrap">
+      <table class="heatmap">
+        <thead>
+          <tr>
+            <th></th>
+            <% hm.modes.each do |mode| %><th class="nowrap"><%= mode %></th><% end %>
+          </tr>
+        </thead>
+        <tbody>
+          <% hm.models.each do |model_label| %>
+            <tr>
+              <th class="heatmap-row-label"><%= model_label %></th>
+              <% hm.modes.each do |mode| %>
+                <% g = hm.group_for(model_label, mode) %>
+                <% frac = g ? g.success_rate / 100.0 : nil %>
+                <td class="heatmap-cell"
+                    style="background: <%= heatmap_fill(frac) %>; color: <%= heatmap_text_color(frac) %>;"
+                    title="<%= g ? "#{model_label} / #{mode}: #{g.success_count}/#{g.run_count} passed, avg #{g.avg_duration_s.round(1)}s" : "#{model_label} / #{mode}: no runs yet" %>">
+                  <% if g %>
+                    <div class="heatmap-pct"><%= g.success_rate.round %>%</div>
+                    <div class="heatmap-n">n=<%= g.run_count %></div>
+                  <% else %>
+                    <span class="heatmap-empty">&mdash;</span>
+                  <% end %>
+                </td>
+              <% end %>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+      <div class="heatmap-legend">
+        <span class="heatmap-legend-label">0%</span>
+        <span class="heatmap-legend-bar"></span>
+        <span class="heatmap-legend-label">100% success</span>
+      </div>
+    </div>
+  <% end %>
+
+  <% @groups.each do |group| %>
+    <h2><%= group.scenario %> &mdash; <span class="model-list"><%= group.model_label %></span> &mdash; <%= group.mode %></h2>
+
+    <div class="scatter-wrap">
+      <div class="scatter-legend">
+        <span><span class="dot dot-pass"></span>Pass</span>
+        <span><span class="dot dot-fail"></span>Fail</span>
+      </div>
+      <% chart = scatter_plot(group.runs) %>
+      <% if chart.empty? %>
+        <p class="empty">Not enough runs with recorded iteration/duration data to chart yet.</p>
+      <% else %>
+        <%= chart %>
+      <% end %>
+    </div>
+
+    <table class="eval-runs">
+      <thead>
+        <tr>
+          <th>Batch</th>
+          <th class="nowrap">Rep</th>
+          <th class="nowrap">Result</th>
+          <th class="nowrap">Turns</th>
+          <th class="nowrap">Iterations</th>
+          <th class="nowrap">Tool calls</th>
+          <th class="nowrap">Duration</th>
+          <th>Ended at</th>
+          <th>Log</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% group.runs.each do |run| %>
+          <% rel = eval_run_relative_log(run) %>
+          <tr>
+            <td class="nowrap">
+              <% if rel %>
+                <a href="<%= eval_run_url(rel) %>" title="open transcript"><%= run.batch_id %></a>
+              <% else %>
+                <%= run.batch_id %>
+              <% end %>
+            </td>
+            <td class="nowrap"><%= run.repetition %></td>
+            <td class="nowrap">
+              <% if run.success? %>
+                <span class="badge-pass">PASS</span>
+              <% else %>
+                <span class="badge-fail">FAIL</span>
+              <% end %>
+              <% if run.hit_turn_limit? %><span title="still out of budget after every reprompt">&#9203;</span><% end %>
+              <% if run.process_failed? %><span title="the agent process crashed or exited non-zero">&#9888;</span><% end %>
+              <% if run.timed_out? %><span title="killed after exceeding the trial timeout">&#8987;</span><% end %>
+              <% if run.fabricated? %><span title="wrote a non-empty file, but the content didn't match — likely substituted something else for the real target">&#127917;</span><% end %>
+              <% if run.mud_connected? == false %><span title="mud_connect() never once reported success — any output was invented, not observed">&#128268;</span><% end %>
+            </td>
+            <td class="nowrap">
+              <% if run.turn_count %>
+                <%= run.turn_count %><% if run.reprompt_count&.positive? %> <span title="reprompts used">(+<%= run.reprompt_count %>)</span><% end %>
+              <% else %>&mdash;<% end %>
+            </td>
+            <td class="nowrap"><%= run.iteration_count.nil? ? "&mdash;" : "#{run.iteration_count}/#{run.max_iterations}" %></td>
+            <td class="nowrap"><%= run.tool_call_count %></td>
+            <td class="nowrap"><%= run.duration_s.round(1) %>s</td>
+            <td class="task">
+              <% if run.final_room %>
+                <details>
+                  <summary><%= plain_first_line(run.final_room) %></summary>
+                  <div class="room-text"><%= ansi_html(run.final_room) %></div>
+                </details>
+              <% else %>&mdash;<% end %>
+            </td>
+            <td class="task">
+              <% if rel %>
+                <a href="<%= eval_run_url(rel) %>">transcript</a>
+                <a href="<%= eval_run_url(rel, suffix: "/story") %>" class="story-link">story</a>
+              <% else %>
+                <code><%= run.log_path %></code>
+              <% end %>
+              <% if (jaeger_url = jaeger_trace_url(run.trace_id)) %>
+                &middot; <a href="<%= jaeger_url %>" target="_blank" rel="noopener" class="story-link" title="open in Jaeger">trace</a>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+<% end %>

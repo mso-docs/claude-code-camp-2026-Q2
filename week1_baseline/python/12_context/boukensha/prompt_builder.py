@@ -21,6 +21,12 @@ class PromptBuilder:
          "content": [{"type": "reasoning", ...} | {"type": "text", ...} | {"type": "tool_use", ...}]}"""
         return self.backend.parse_response(response)
 
+    def usage(self, response: dict) -> dict:
+        """Delegates to the backend, which normalizes a raw API response's
+        token counts into {"input_tokens":, "output_tokens":} — see
+        backends/base.py's Base.usage()."""
+        return self.backend.usage(response)
+
     def headers(self):
         return self.backend.headers()
 

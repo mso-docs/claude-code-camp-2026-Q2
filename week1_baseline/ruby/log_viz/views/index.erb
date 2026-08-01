@@ -46,3 +46,74 @@
     </tbody>
   </table>
 <% end %>
+
+<h2>Recent eval runs</h2>
+
+<% if @eval_runs.empty? %>
+  <p class="empty">No eval results found in <code><%= settings.eval_results_dir %></code>. Run <code>python3 evals/run_bakery.py</code> to generate some.</p>
+<% else %>
+  <p class="meta">
+    Showing the latest <%= @eval_runs.length %> of <%= @eval_run_total %> &mdash;
+    <a href="/evals">full eval dashboard</a> for success rates, iteration/reprompt stats, and charts grouped by scenario/model/mode.
+  </p>
+  <table class="eval-runs">
+    <thead>
+      <tr>
+        <th>Batch</th>
+        <th class="nowrap">Rep</th>
+        <th>Scenario</th>
+        <th>Model</th>
+        <th class="nowrap">Mode</th>
+        <th class="nowrap">Result</th>
+        <th>Ended at</th>
+        <th>Log</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @eval_runs.each do |run| %>
+        <% rel = eval_run_relative_log(run) %>
+        <tr>
+          <td class="nowrap">
+            <% if rel %>
+              <a href="<%= eval_run_url(rel) %>"><%= run.batch_id %></a>
+            <% else %>
+              <%= run.batch_id %>
+            <% end %>
+          </td>
+          <td class="nowrap"><%= run.repetition %></td>
+          <td><%= run.scenario %></td>
+          <td class="model-list"><%= run.model_label %></td>
+          <td class="nowrap"><%= run.mode %></td>
+          <td class="nowrap">
+            <% if run.success? %>
+              <span class="badge-pass">PASS</span>
+            <% else %>
+              <span class="badge-fail">FAIL</span>
+            <% end %>
+            <% if run.fabricated? %><span title="wrote a non-empty file, but the content didn't match — likely substituted something else for the real target">&#127917;</span><% end %>
+            <% if run.mud_connected? == false %><span title="mud_connect() never once reported success — any output was invented, not observed">&#128268;</span><% end %>
+          </td>
+          <td class="task">
+            <% if run.final_room %>
+              <details>
+                <summary><%= plain_first_line(run.final_room) %></summary>
+                <div class="room-text"><%= ansi_html(run.final_room) %></div>
+              </details>
+            <% else %>&mdash;<% end %>
+          </td>
+          <td class="task">
+            <% if rel %>
+              <a href="<%= eval_run_url(rel) %>">transcript</a>
+              <a href="<%= eval_run_url(rel, suffix: "/story") %>" class="story-link">story</a>
+            <% else %>
+              <code><%= run.log_path %></code>
+            <% end %>
+            <% if (jaeger_url = jaeger_trace_url(run.trace_id)) %>
+              &middot; <a href="<%= jaeger_url %>" target="_blank" rel="noopener" class="story-link" title="open in Jaeger">trace</a>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>

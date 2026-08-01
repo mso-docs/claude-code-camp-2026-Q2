@@ -56,6 +56,13 @@ class Agent:
         # None by default, so every non-Tui usage is unaffected.
         self.cancel_event = cancel_event
         self.iteration = 0
+        # Mirrors the `reason` strings already passed to logger.turn_end():
+        # "completed" | "max_iterations" | "max_tokens" | None (turn still
+        # running / raised before finishing). run_reprompted() reads this to
+        # decide whether a turn ran out of runway or stopped on its own —
+        # see its docstring for why iteration count alone isn't enough
+        # (max_turn_tokens can end a turn well under the iteration ceiling).
+        self.stop_reason: str | None = None
 
     def run(self) -> str:
         self.context.reset_turn_tokens()
@@ -105,9 +112,10 @@ class Agent:
                         self._handle_tool_calls(parsed["content"], response)
                     else:
                         text = self._extract_text(parsed["content"])
-                        self.logger.response(text=text, usage=response.get("usage"), stop_reason=parsed["stop_reason"])
+                        self.logger.response(text=text, usage=self.builder.usage(response), stop_reason=parsed["stop_reason"])
                         self.logger.turn_end(reason="completed", iterations=self.iteration, tokens=self.context.turn_tokens)
                         self.context.add_message("assistant", text)
+                        self.stop_reason = "completed"
                         return text
 
     # ---------- private ---------------------------------------------------
@@ -129,7 +137,7 @@ class Agent:
         spend budget) and refresh the known context size from input_tokens
         (compaction pressure — a replacement, not an addition: any given
         response's input_tokens already reflects the whole replayed history)."""
-        usage = response.get("usage") or {}
+        usage = self.builder.usage(response)
         self.context.add_turn_tokens(usage.get("input_tokens"), usage.get("output_tokens"))
         self.context.update_tokens(usage.get("input_tokens") or 0)
 
@@ -147,6 +155,7 @@ class Agent:
         increment self.iteration, though its tokens still count toward the
         reported turn total. Falls back to a deterministic message if the
         call fails."""
+        self.stop_reason = reason
         self.context.add_message("user", WRAP_UP_DIRECTIVE)
         try:
             response = self.client.call(tools=[], max_output_tokens=WRAP_UP_OUTPUT_TOKENS)
@@ -155,7 +164,7 @@ class Agent:
             if not text.strip():
                 text = self._fallback_message(reason)
             self._record_usage(response)
-            self.logger.response(text=text, usage=response.get("usage"), stop_reason=parsed_wrap["stop_reason"])
+            self.logger.response(text=text, usage=self.builder.usage(response), stop_reason=parsed_wrap["stop_reason"])
             self.logger.turn_end(reason=reason, iterations=self.iteration, tokens=self.context.turn_tokens)
             self.context.add_message("assistant", text)
             return text
@@ -202,7 +211,7 @@ class Agent:
             self.logger.plan(text=preamble)
         suffix = "" if len(tool_calls) == 1 else "s"
         self.logger.response(
-            text=f"(tool use — {len(tool_calls)} call{suffix})", usage=response.get("usage"), stop_reason="tool_use"
+            text=f"(tool use — {len(tool_calls)} call{suffix})", usage=self.builder.usage(response), stop_reason="tool_use"
         )
 
         self.context.add_message("assistant", content)

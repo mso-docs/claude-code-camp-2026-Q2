@@ -18,6 +18,7 @@ TABLE = {
     # almost immediately against a real 256k-context local model.
     "qwen3.6:27b": {"context_window": 256_000},
     "qwen3.6:35b-a3b": {"context_window": 256_000},
+    "qwen3.5:4b": {"context_window": 128_000},
 }
 
 DEFAULT_CONTEXT_WINDOW = 32_000

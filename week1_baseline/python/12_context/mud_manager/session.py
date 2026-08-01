@@ -86,6 +86,16 @@ class Session:
             pass  # already closed / broken — fine
         if self._reader:
             self._reader.join(1)
+        # Not narrowing a race, closing one: the reader thread's own loop
+        # (see _start_reader below) now checks self._closed before every
+        # recv(), so by the time join() returns — or even times out — the
+        # reader is done touching self._socket. Nulling it here used to be
+        # able to race a slow-to-notice reader thread straight into an
+        # AttributeError ('NoneType' object has no attribute 'recv'), most
+        # visible under the eval harness's rapid open-look-close preflight
+        # checks (evals/boukensha_agent.py's check_starting_room()), which
+        # exercise this path far more often than a normal long-lived play
+        # session ever did.
         self._socket = None
         self._reader = None
 
@@ -230,7 +240,17 @@ class Session:
         def run() -> None:
             try:
                 while True:
-                    chunk = self._socket.recv(4096)
+                    # A local reference, checked together with self._closed,
+                    # so this thread never dereferences self._socket after
+                    # close() (running concurrently on another thread) has
+                    # already nulled it out — that race used to surface as
+                    # "AttributeError: 'NoneType' object has no attribute
+                    # 'recv'" on the *next* loop iteration after a socket
+                    # closed mid-read.
+                    sock = self._socket
+                    if self._closed or sock is None:
+                        break
+                    chunk = sock.recv(4096)
                     if not chunk:
                         break
                     text = self._strip_iac(chunk)
@@ -241,6 +261,8 @@ class Session:
                             self._cond.notify_all()
             except OSError:
                 pass  # remote closed / connection reset — fall through
+            except AttributeError:
+                pass  # self._socket was nulled by a concurrent close() — same as a clean shutdown
             except Exception as e:
                 print(f"[MudManager.Session] reader error: {type(e).__name__}: {e}")
             finally:

@@ -1,6 +1,17 @@
-<a href="/" class="back">&larr; All sessions</a>
+<%
+  # Regular /sessions/:id routes leave these unset — default to the
+  # session-index scheme they've always used. /evals/runs/* routes set all
+  # five explicitly, since @session.id (just the log's basename, "session"
+  # for every eval run) isn't unique or meaningful there.
+  @back_path       ||= "/"
+  @back_label      ||= "All sessions"
+  @header_title    ||= "Session #{@session.id}"
+  @transcript_path ||= "/sessions/#{@session.id}"
+  @story_path      ||= "/sessions/#{@session.id}/story"
+%>
+<a href="<%= @back_path %>" class="back">&larr; <%= @back_label %></a>
 
-<h1>Session <%= @session.id %></h1>
+<h1><%= @header_title %></h1>
 <p class="meta">
   Started <%= format_time(@session.started_at) %>
 </p>
@@ -9,13 +20,13 @@
   <% if @current_view == :transcript %>
     <span class="current">Transcript</span>
   <% else %>
-    <a href="/sessions/<%= @session.id %>">Transcript</a>
+    <a href="<%= @transcript_path %>">Transcript</a>
   <% end %>
   &middot;
   <% if @current_view == :story %>
     <span class="current">Story view</span>
   <% else %>
-    <a href="/sessions/<%= @session.id %>/story">Story view</a>
+    <a href="<%= @story_path %>">Story view</a>
   <% end %>
 </p>
 

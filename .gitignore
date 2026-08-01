@@ -29,3 +29,7 @@
 # Generated CircleMUD conversion output
 /week0_explore/preview/data/world/*
 !/week0_explore/preview/data/world/.keep
+
+# Eval run artifacts (per-run workdir/session log/throwaway .boukensha config)
+# — regenerable; the scoreboards in evals/results/*.jsonl are kept.
+evals/results/*/

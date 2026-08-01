@@ -27,6 +27,9 @@ body {
 .topbar {
   background: #1f2328;
   padding: 0.75rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .topbar .brand {
@@ -34,6 +37,17 @@ body {
   font-weight: 600;
   text-decoration: none;
   font-size: 1.1rem;
+}
+
+.topnav a {
+  color: #c2c8d0;
+  text-decoration: none;
+  font-size: 0.9rem;
+  margin-left: 1.25rem;
+}
+
+.topnav a:hover {
+  color: #fff;
 }
 
 main {
@@ -65,7 +79,9 @@ h1 {
   margin-bottom: 1.5rem;
 }
 
-table.sessions {
+table.sessions,
+table.eval-groups,
+table.eval-runs {
   width: 100%;
   border-collapse: collapse;
   background: var(--panel);
@@ -75,34 +91,148 @@ table.sessions {
 }
 
 table.sessions th,
-table.sessions td {
+table.sessions td,
+table.eval-groups th,
+table.eval-groups td,
+table.eval-runs th,
+table.eval-runs td {
   padding: 0.6rem 0.8rem;
   border-bottom: 1px solid var(--border);
   text-align: left;
   font-size: 0.9rem;
 }
 
-table.sessions th {
+table.sessions th,
+table.eval-groups th,
+table.eval-runs th {
   background: #f0f2f5;
   font-weight: 600;
 }
 
-table.sessions tr:last-child td {
+table.sessions tr:last-child td,
+table.eval-groups tr:last-child td,
+table.eval-runs tr:last-child td {
   border-bottom: none;
 }
 
-table.sessions tr:hover {
+table.sessions tr:hover,
+table.eval-groups tr:hover,
+table.eval-runs tr:hover {
   background: #f6f8fa;
 }
 
-table.sessions a {
+table.sessions a,
+table.eval-groups a,
+table.eval-runs a {
   color: var(--accent);
   text-decoration: none;
   font-family: ui-monospace, monospace;
 }
 
-table.sessions a:hover {
+table.sessions a:hover,
+table.eval-groups a:hover,
+table.eval-runs a:hover {
   text-decoration: underline;
+}
+
+.scatter-wrap {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.75rem 1rem 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.scatter {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.scatter-grid {
+  stroke: #e1e0d9;
+  stroke-width: 1;
+}
+
+.scatter-axis {
+  stroke: #c3c2b7;
+  stroke-width: 1;
+}
+
+.scatter-tick,
+.scatter-axis-label {
+  fill: #898781;
+  font-size: 9px;
+  font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+}
+
+.scatter-axis-label {
+  font-size: 10px;
+}
+
+.scatter-dot {
+  /* No stroke ring — it was meant to separate overlapping points but did
+     the opposite: a solid ring painted over whatever was underneath just
+     made a cluster of near-identical points look like a blob of rings
+     instead of showing that multiple runs landed close together. Partial
+     fill opacity instead: overlapping dots visibly darken where they
+     stack, which is the actual signal worth seeing here. */
+  fill-opacity: 0.65;
+}
+
+.scatter-legend {
+  display: flex;
+  gap: 1.25rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  padding: 0 0.25rem 0.5rem;
+}
+
+.scatter-legend .dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-right: 0.35rem;
+  vertical-align: middle;
+}
+
+.scatter-legend .dot-pass {
+  background: #0ca30c;
+}
+
+.scatter-legend .dot-fail {
+  background: #d03b3b;
+}
+
+.room-text {
+  margin-top: 0.35rem;
+  padding: 0.5rem 0.6rem;
+  background: #1f2328;
+  border-radius: 4px;
+  font-family: ui-monospace, monospace;
+  font-size: 0.8rem;
+  white-space: pre-wrap;
+  max-width: 32rem;
+}
+
+.badge-pass,
+.badge-fail {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.badge-pass {
+  background: #dcf5e0;
+  color: #1e7a33;
+}
+
+.badge-fail {
+  background: #fbe1e1;
+  color: var(--danger);
 }
 
 .task-name,
