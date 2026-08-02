@@ -1,0 +1,54 @@
+<h1>Scoreboard</h1>
+
+<% if @leaderboard.empty? %>
+  <p class="empty">No eval results found in <code><%= settings.eval_results_dir %></code>. Run <code>python3 evals/run_bakery.py</code> to generate some.</p>
+<% else %>
+  <p class="meta">
+    Raw pass/fail counts per model, summed across every scenario and mode (strict, reprompt1,
+    reprompt2, whatever's been run) — no attempt to separate out which scenario a pass came from.
+    Ranked by win rate, ties broken by whichever model has more total runs behind it. New models
+    show up here automatically the next time you run an eval batch against them; nothing needs to
+    be added by hand. See <a href="/evals">Evals</a> for the scenario-by-scenario breakdown this
+    collapses.
+  </p>
+
+  <table class="leaderboard">
+    <thead>
+      <tr>
+        <th class="nowrap">#</th>
+        <th>Model</th>
+        <th class="nowrap">Win rate</th>
+        <th class="nowrap">Pass</th>
+        <th class="nowrap">Fail</th>
+        <th class="nowrap">Total runs</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @leaderboard.each_with_index do |row, i| %>
+        <tr>
+          <td class="nowrap leaderboard-rank <%= "leaderboard-rank-top" if i < 3 %>"><%= i + 1 %></td>
+          <td class="model-list"><%= row.model_label %></td>
+          <td class="nowrap leaderboard-rate-cell">
+            <span class="leaderboard-rate-label"><%= row.win_rate.round %>%</span>
+            <div class="bar"><div class="bar-fill leaderboard-bar-fill" style="width: <%= row.win_rate.round(1) %>%"></div></div>
+          </td>
+          <td class="nowrap"><%= row.pass_count %></td>
+          <td class="nowrap"><%= row.fail_count %></td>
+          <td class="nowrap"><%= row.total %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <h2>Pass vs. fail, by rank</h2>
+  <% chart = pass_fail_bar_chart(@leaderboard) %>
+  <% if chart.empty? %>
+    <p class="empty">No runs yet.</p>
+  <% else %>
+    <div class="scatter-legend">
+      <span><span class="dot dot-pass"></span>Pass</span>
+      <span><span class="dot dot-fail"></span>Fail</span>
+    </div>
+    <div class="outcome-chart-wrap"><%= chart %></div>
+  <% end %>
+<% end %>
