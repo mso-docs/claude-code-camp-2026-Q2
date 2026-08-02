@@ -81,7 +81,8 @@ h1 {
 
 table.sessions,
 table.eval-groups,
-table.eval-runs {
+table.eval-runs,
+table.leaderboard {
   width: 100%;
   border-collapse: collapse;
   background: var(--panel);
@@ -95,7 +96,9 @@ table.sessions td,
 table.eval-groups th,
 table.eval-groups td,
 table.eval-runs th,
-table.eval-runs td {
+table.eval-runs td,
+table.leaderboard th,
+table.leaderboard td {
   padding: 0.6rem 0.8rem;
   border-bottom: 1px solid var(--border);
   text-align: left;
@@ -104,20 +107,23 @@ table.eval-runs td {
 
 table.sessions th,
 table.eval-groups th,
-table.eval-runs th {
+table.eval-runs th,
+table.leaderboard th {
   background: #f0f2f5;
   font-weight: 600;
 }
 
 table.sessions tr:last-child td,
 table.eval-groups tr:last-child td,
-table.eval-runs tr:last-child td {
+table.eval-runs tr:last-child td,
+table.leaderboard tr:last-child td {
   border-bottom: none;
 }
 
 table.sessions tr:hover,
 table.eval-groups tr:hover,
-table.eval-runs tr:hover {
+table.eval-runs tr:hover,
+table.leaderboard tr:hover {
   background: #f6f8fa;
 }
 
@@ -127,6 +133,32 @@ table.eval-runs a {
   color: var(--accent);
   text-decoration: none;
   font-family: ui-monospace, monospace;
+}
+
+/* /scoreboard leaderboard specifics */
+.leaderboard-rank {
+  font-weight: 700;
+  color: var(--muted);
+  font-size: 1rem;
+}
+
+.leaderboard-rank-top {
+  color: #b8860b;
+}
+
+.leaderboard-rate-cell {
+  min-width: 140px;
+}
+
+.leaderboard-rate-label {
+  display: inline-block;
+  min-width: 2.6em;
+  font-weight: 600;
+  margin-bottom: 0.2rem;
+}
+
+.leaderboard-bar-fill {
+  background: #0ca30c;
 }
 
 table.sessions a:hover,

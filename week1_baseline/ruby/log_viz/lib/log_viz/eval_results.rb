@@ -148,6 +148,7 @@ module LogViz
   # are actually winning, roughly" view, not a replacement for those.
   ModelPassFail = Struct.new(:model_label, :pass_count, :fail_count) do
     def total = pass_count + fail_count
+    def win_rate = total.zero? ? 0.0 : (pass_count.to_f / total * 100)
   end
 
   module EvalResults
@@ -214,6 +215,16 @@ module LogViz
         total = model_groups.sum(&:run_count)
         ModelPassFail.new(model_label, pass, total - pass)
       end.sort_by(&:model_label)
+    end
+
+    # Same rows as pass_fail_by_model, ranked by win rate (ties broken by
+    # more total runs first — more data behind the same rate is worth
+    # ranking above it) instead of pass_fail_by_model's alphabetical
+    # order. A separate method rather than changing that one's sort so the
+    # /evals "pass vs. fail by model" chart's bar order stays untouched —
+    # this one is specifically for /scoreboard, where ranking is the point.
+    def self.leaderboard(groups)
+      pass_fail_by_model(groups).sort_by { |r| [-r.win_rate, -r.total] }
     end
 
     def self.heatmaps(groups)

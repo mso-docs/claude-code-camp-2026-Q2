@@ -581,6 +581,18 @@ module LogViz
       erb :evals
     end
 
+    # A model-vs-model leaderboard, separate from /evals's scenario/mode
+    # drill-down — raw pass/fail counts summed across every scenario and
+    # mode, ranked by win rate. New models need zero code changes to show
+    # up here: it's a straight aggregation off whatever model_label strings
+    # already exist in evals/results/*.jsonl, run through the same
+    # groups()/leaderboard() pipeline /evals itself uses.
+    get "/scoreboard" do
+      @groups = EvalResults.groups(EvalResults.load_all(settings.eval_results_dir))
+      @leaderboard = EvalResults.leaderboard(@groups)
+      erb :scoreboard
+    end
+
     # Eval trial logs are written by the same Logger as regular sessions
     # (evals/boukensha_agent.py's driver calls the same boukensha.run_reprompted(),
     # which shares boukensha/logger.py) — same phase-tagged JSONL, so the
