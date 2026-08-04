@@ -66,6 +66,7 @@ def _request_json(host: str) -> RequestJSON:
                 return json.loads(response.read())
         except urllib.error.HTTPError as e:
             response_body = e.read().decode("utf-8", errors="replace")
+            response_body = response_body.replace(base, "<ollama-host>")
             raise OllamaCatalogError(f"Ollama returned HTTP {e.code}: {response_body[:500]}") from e
         except (urllib.error.URLError, TimeoutError, OSError, json.JSONDecodeError) as e:
             raise OllamaCatalogError(f"Ollama request failed: {type(e).__name__}") from e
@@ -169,7 +170,9 @@ def probe_tool_loop(
             "role": "user",
             "content": (
                 "Call boukensha_probe exactly once with value "
-                "'boukensha-probe'. Do not answer in prose before calling it."
+                "'boukensha-probe'. Do not answer in prose before calling it. "
+                "After its result arrives, reply with the exact text "
+                "probe-complete and call no more tools."
             ),
         }
     ]
@@ -197,14 +200,18 @@ def probe_tool_loop(
         if arguments.get("value") != "boukensha-probe":
             return _probe_result(model, started, False, "bad_arguments", f"arguments={arguments!r}")
 
+        # Mirror Ollama._assistant_message: round-trip content + tool calls,
+        # then append the tool result directly. Boukensha does not insert a
+        # fresh user reminder between a tool result and the next model call.
+        assistant_turn = {
+            "role": "assistant",
+            "content": str(assistant.get("content") or ""),
+            "tool_calls": calls,
+        }
         messages.extend(
             [
-                assistant,
+                assistant_turn,
                 {"role": "tool", "tool_name": "boukensha_probe", "content": "probe-ok"},
-                {
-                    "role": "user",
-                    "content": "The tool completed. Reply with the exact text probe-complete and call no more tools.",
-                },
             ]
         )
         second = request("/api/chat", {**common, "messages": messages}, timeout)

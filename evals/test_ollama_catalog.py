@@ -67,7 +67,7 @@ class CatalogTests(unittest.TestCase):
 
         self.assertTrue(result.passed)
         self.assertEqual(result.status, "passed")
-        self.assertEqual(calls[1]["messages"][-2]["tool_name"], "boukensha_probe")
+        self.assertEqual(calls[1]["messages"][-1]["tool_name"], "boukensha_probe")
 
     def test_probe_detects_model_stuck_calling_tools(self):
         def request(path, payload, timeout):
@@ -93,8 +93,8 @@ class CatalogTests(unittest.TestCase):
 
     def test_model_directory_sanitizes_namespaces_and_tags(self):
         self.assertEqual(
-            run_bakery.model_dir_name("ollama", "cmdmbox/skill-expert:latest"),
-            "ollama_cmdmbox-skill-expert-latest",
+            run_bakery.model_dir_name("ollama", "example/tool-model:latest"),
+            "ollama_example-tool-model-latest",
         )
 
 

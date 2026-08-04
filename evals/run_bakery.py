@@ -87,7 +87,7 @@ def parse_target(spec: str) -> tuple[str, str]:
 
 
 def model_dir_name(backend: str, model: str) -> str:
-    """Filesystem-safe run directory for tags such as cmdmbox/skill-expert."""
+    """Filesystem-safe run directory for namespaced tags."""
     return re.sub(r"[^A-Za-z0-9._-]+", "-", f"{backend}_{model}").strip("-")
 
 

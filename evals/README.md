@@ -156,9 +156,11 @@ python3 evals/run_bakery.py \
 
 The probe deliberately uses Boukensha's Ollama message format and
 `think: false`. First the model must call `boukensha_probe` with an exact
-argument. The result is returned using Ollama's `tool_name` tool-result shape,
-and the model must produce a normal final completion without calling the tool
-again. Outcomes such as `no_tool_call`, `bad_arguments`, `tool_loop`, and
+argument. The original instruction also tells it what to do after the result.
+The result is then returned directly using Ollama's `tool_name` tool-result
+shape, with no extra user reminder, and the model must produce a normal final
+completion without calling the tool again. Outcomes such as `no_tool_call`,
+`bad_arguments`, `tool_loop`, and
 `no_final_completion` separate basic model/harness compatibility failures from
 later MUD reasoning failures.
 

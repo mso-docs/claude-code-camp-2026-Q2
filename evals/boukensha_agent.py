@@ -112,7 +112,9 @@ def configured_ollama_host() -> str:
     The returned private URL is for requests only. Callers must not include it
     in logs/results; discovery errors are sanitized by ollama_catalog.py.
     """
-    runtime_env = {**os.environ, **_load_env_vars(REAL_ENV_FILE)}
+    # Match Config/load_dotenv semantics: an explicitly exported process value
+    # wins over the repository .env fallback.
+    runtime_env = {**_load_env_vars(REAL_ENV_FILE), **os.environ}
     if runtime_env.get("OLLAMA_HOST"):
         return runtime_env["OLLAMA_HOST"]
 

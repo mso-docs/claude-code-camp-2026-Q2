@@ -381,6 +381,10 @@ later configurations without reading a transcript manually.
 
 ### Stage 1 — repair tool schemas
 
+- [x] Remove Ollama's static model allowlist behavior; discover installed tags
+  and advertised capabilities from the configured server for eval selection.
+- [x] Add an optional exact two-request tool-loop probe so capability metadata
+  is not treated as proof of harness compatibility.
 - [ ] Add explicit JSON Schema and `required` handling to `Tool`/`Registry`.
 - [ ] Port every backend to serialize the common schema.
 - [ ] Add enums, safe defaults, and `additionalProperties: false`.

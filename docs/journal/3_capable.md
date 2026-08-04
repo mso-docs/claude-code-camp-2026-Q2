@@ -257,6 +257,22 @@ The detailed staged plan was written in
 `docs/plans/16_state_aware_execution.md`. No capability code has been changed
 yet, and no result is being claimed in advance.
 
+### 2026-08-04 — Runtime Ollama discovery and tool-loop probes
+
+The eval runner no longer needs a manually maintained list of installed Ollama
+tags. It resolves the existing configured host, reads `/api/tags`, inspects
+`/api/show` capabilities, deduplicates aliases by digest, and can select all
+tool-advertising completion models. The backend's static model table now
+supplies verified metadata only instead of rejecting every unknown tag.
+
+An optional two-request probe was added before full MUD trials. It verifies an
+exact tool call and the model's next completion after the result, using the
+same message ordering as Boukensha. Live checks passed for `gemma4:latest`,
+`gemma4:26b`, and `qwen3.5:0.8b`. This rules out the minimal Ollama round trip as
+the sole cause of earlier Gemma gameplay loops while leaving the larger tool
+schema/action-selection problem open. No private Ollama hostname is embedded or
+written to eval output.
+
 ### Stage 0 — Baseline and metrics
 
 Pending.
