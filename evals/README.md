@@ -174,14 +174,44 @@ LOG_VIZ_EVAL_RESULTS_DIR="$(pwd)/../../../evals/results" \
 bundle exec ruby bin/log_viz
 ```
 
-Then open <http://localhost:4567/evals> (nav bar at the top switches
-between the session transcript viewer and this eval dashboard — no
-restart needed after a new batch, it re-reads the results files on every
-page load). Each scenario/model/mode combination gets its own summary row
-(success rate, average iterations used, average reprompts used) plus a
-scatter chart (iterations used vs. duration, colored pass/fail — hover a
-point for batch/rep detail) and a run-by-run table with a link to that
-run's raw session log.
+Open <http://localhost:4567> — the nav bar at the top switches between
+every view below; nothing needs a restart after a new batch, every page
+re-reads the results files on load.
+
+### Sessions — Transcript / Story / Movement
+
+`/sessions/:id` is the raw per-trial view (also what an eval run's
+**transcript**/**story** links open, since `evals/boukensha_agent.py`'s
+driver writes trials through the same `Logger` as interactive play — see
+[`session.rb`](../week1_baseline/ruby/log_viz/lib/log_viz/session.rb)).
+Three tabs, toggled at the top of the page:
+
+- **Transcript** — the flat, chronological event log: every prompt, tool
+  call/result, reasoning block, and turn boundary, as it happened.
+- **Story** — the same events regrouped into one narrative "beat" per turn
+  (what the agent was asked, what it thought/did, how it landed), with
+  reasoning and tool mechanics folded behind `<details>` toggles.
+- **Movement** — for any trial that actually played the MUD: a
+  reconstruction of the room-by-room path, parsed straight out of the
+  transcript's own `move`/`look` results (no separate logging needed). A
+  static map of every room the trial visited (node size/color = time
+  spent there, path drawn over it) plus an interactive play/scrub/speed
+  replay with a live "which room, how long, how many blocked moves"
+  readout. A trial that never connected, or whose harness doesn't log a
+  per-step transcript (see the OpenCode caveat below), shows an empty
+  state here rather than a blank chart.
+
+### Evals — `/evals`
+
+The scenario/mode/model dashboard. Each scenario/model/mode combination
+gets its own summary row (success rate, average iterations used, average
+reprompts used) plus a scatter chart (iterations used vs. duration,
+colored pass/fail — hover a point for batch/rep detail) and a run-by-run
+table linking each row to that run's **transcript**/**story**/**movement**
+views. `/evals/legacy` holds the same layout for runs scored before
+`mud_connected`/`content_matched` existed (see `EvalRun#legacy_scoring?`)
+— kept separate rather than folded in, since those runs passed under a
+looser rule and would otherwise quietly inflate a model's apparent rate.
 
 Each trial also runs inside its own `eval.trial` OTel span (parenting the
 same `agent.turn`/`agent.iteration`/`llm.request` spans interactive play
@@ -191,11 +221,72 @@ traces. `boukensha_agent.py` points every trial at the collector
 (`http://localhost:4318` by default — override with `OTEL_EXPORTER_OTLP_ENDPOINT`
 before running a batch) and records the resulting `trace_id` back into
 `results.jsonl`, so a run row in the dashboard gets a **trace** link
-straight to Jaeger alongside **transcript**/**story**. None of this
-requires the observability stack to be running — a trial that can't reach
-the collector just doesn't get a `trace_id` (checked automatically:
+straight to Jaeger alongside **transcript**/**story**/**movement**. None of
+this requires the observability stack to be running — a trial that can't
+reach the collector just doesn't get a `trace_id` (checked automatically:
 `span.get_span_context().is_valid` is false with no real provider
 configured), and everything else about the trial is unaffected.
+
+### Scoreboard — `/scoreboard`
+
+The coarsest "which model is actually winning" view: every scenario and
+mode summed together into one pass/fail count per model, ranked by win
+rate (ties broken by whoever has more total runs — more data behind the
+same rate is worth ranking above it). Not a replacement for `/evals`'s
+scenario-by-scenario breakdown, just the leaderboard version of the same
+numbers. `/scoreboard/legacy` mirrors the `/evals/legacy` split.
+
+### Movement — `/movement`, `/movement/replay`, `/movement/world`, `/movement/grid`
+
+Everything under the **Movement** nav tab rolls the per-session Movement
+tab above up across runs, so you can compare *how* models played, not
+just whether they passed:
+
+- **`/movement`** — the aggregate landing page: bar charts of average
+  blocked moves (wandering) and average distinct rooms explored per
+  model, a summary table, and a trend-over-time line chart (same metric,
+  per model, across eval batches) with links to filter by scenario/mode.
+- **`/movement/replay?scenario=...&mode=...`** — each model's most recent
+  run for one scenario/mode, replayed together on **one shared map**.
+  Room positions are resolved against CircleMUD's real room graph
+  ([`WorldMap`](../week1_baseline/ruby/log_viz/lib/log_viz/world_map.rb),
+  exported once from the `.wld` world files by
+  [`export_room_graph.py`](../week0_explore/circlemud-world-parser/export_room_graph.py)
+  into a static JSON asset — no Python needed at request time), so a room
+  means the same physical place for every model instead of each session
+  inventing its own layout. Plays back as a live, decaying group "heat
+  trail" — rooms glow by how many models are currently or recently in
+  them — rather than individual markers, plus a per-model room/dwell
+  readout table.
+- **`/movement/world`** — every scenario, mode, and model's movement at
+  once, combined into a single cumulative traffic heatmap on the same
+  shared map. No playback (runs span days, so there's no one shared clock
+  worth scrubbing) — toggle between total dwell time and visit count as
+  the metric, and a table of the busiest rooms below the map.
+- **`/movement/grid?scenario=...&mode=...`** — small multiples: each
+  model's most recent run drawn on its *own* layout (like the
+  per-session Movement tab, not the shared world map), side by side in a
+  grid, all advancing together on one shared step control. Steps are
+  room-arrival counts rather than wall-clock time or a fixed command
+  budget, since this harness doesn't cap trials at a fixed number of
+  actions the way some other agent harnesses do.
+
+Two caveats worth knowing before reading too much into any of these:
+
+- **OpenCode/OpenRouter runs have no Movement data.** `run_bakery_opencode.py`
+  (see above) doesn't currently log a per-step transcript, only aggregate
+  counts — every Movement view says so explicitly rather than rendering a
+  misleading all-zero bar for a harness that was never instrumented for
+  this.
+- **Room-name resolution isn't 100%.** `WorldMap#resolve_trace` matches a
+  session's room *names* (there's no vnum in the transcript) against the
+  real world graph, disambiguating reused names (e.g. multiple "Main
+  Street" segments across zones) by checking adjacency to an
+  already-resolved neighbor. A very short trial with only ambiguous room
+  names, or a name that simply doesn't exist in the mapped `.wld` files,
+  can't be placed — it's skipped rather than guessed at, and
+  `/movement/world`'s page shows the actual resolved/total ratio rather
+  than hiding the gap.
 
 ## Adding a new scenario
 
