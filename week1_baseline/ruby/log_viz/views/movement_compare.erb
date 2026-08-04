@@ -1,0 +1,82 @@
+<h1>Movement</h1>
+<p class="meta">
+  Rolled up from each run's own <code>move</code>/<code>look</code> trace &mdash;
+  see the "Movement" tab on any individual session for the single-run replay
+  these numbers summarize.
+</p>
+
+<% if @model_summaries.empty? %>
+  <p class="story-note">
+    No movement data in the current eval results. This needs a harness that logs
+    a per-step transcript (today: Ollama/boukensha runs) &mdash; OpenCode/OpenRouter
+    runs currently only log aggregate counts, so they can't appear here yet.
+  </p>
+<% else %>
+  <div class="move-compare-charts">
+    <div class="scatter-wrap">
+      <div class="scatter-title">Avg blocked moves per run &mdash; wandering</div>
+      <%= movement_avg_bar_chart(@model_summaries, @model_colors, y_label: "avg blocked moves") { |s| s.avg_blocked } %>
+    </div>
+    <div class="scatter-wrap">
+      <div class="scatter-title">Avg distinct rooms explored per run</div>
+      <%= movement_avg_bar_chart(@model_summaries, @model_colors, y_label: "avg rooms explored") { |s| s.avg_rooms } %>
+    </div>
+  </div>
+
+  <table class="breakdown-table move-compare-table">
+    <thead>
+      <tr>
+        <th>Model</th>
+        <th class="nowrap">Runs</th>
+        <th class="nowrap">Success rate</th>
+        <th class="nowrap">Avg blocked</th>
+        <th class="nowrap">Avg rooms</th>
+        <th class="nowrap">Avg dwell</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @model_summaries.sort_by { |s| -s.avg_blocked }.each do |s| %>
+        <tr>
+          <td><span class="trend-legend-dot" style="background:<%= @model_colors[s.model_label] %>"></span><%= text_html(s.model_label) %></td>
+          <td class="nowrap"><%= s.run_count %></td>
+          <td class="nowrap"><%= s.success_rate.round(1) %>%</td>
+          <td class="nowrap"><%= s.avg_blocked.round(2) %></td>
+          <td class="nowrap"><%= s.avg_rooms.round(1) %></td>
+          <td class="nowrap"><%= fmt_duration(s.avg_dwell_s) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <h2>Trend over time</h2>
+
+  <p class="move-scenario-links">
+    <% @scenario_modes.each_with_index do |((scenario, mode), n), i| %>
+      <% if scenario == @trend_scenario && mode == @trend_mode %>
+        <span class="current"><%= text_html(scenario) %> / <%= text_html(mode) %> (<%= n %>)</span>
+      <% else %>
+        <a href="/movement?scenario=<%= URI.encode_www_form_component(scenario) %>&amp;mode=<%= URI.encode_www_form_component(mode) %>"><%= text_html(scenario) %> / <%= text_html(mode) %> (<%= n %>)</a>
+      <% end %>
+      <%= " &middot; " if i < @scenario_modes.length - 1 %>
+    <% end %>
+  </p>
+
+  <% if @trend.values.flatten.length < 2 %>
+    <p class="story-note">Not enough batches yet for a trend line in this scenario/mode.</p>
+  <% else %>
+    <div class="scatter-wrap">
+      <div class="trend-legend"><%= movement_legend(@trend.keys, @model_colors) %></div>
+      <%= movement_trend_chart(@trend, @model_colors, y_label: "avg blocked moves per run") { |p| p.avg_blocked } %>
+    </div>
+  <% end %>
+
+  <p>
+    <a href="/movement/replay?scenario=<%= URI.encode_www_form_component(@trend_scenario) %>&amp;mode=<%= URI.encode_www_form_component(@trend_mode) %>">
+      &#9654; Watch a synchronized replay for this scenario/mode
+    </a>
+    &middot;
+    <a href="/movement/world">&#9635; World heatmap &mdash; every scenario/mode/model at once</a>
+    &middot;
+    <a href="/movement/grid?scenario=<%= URI.encode_www_form_component(@trend_scenario) %>&amp;mode=<%= URI.encode_www_form_component(@trend_mode) %>">&#9638; Side by side &mdash; each model's own map</a>
+  </p>
+<% end %>

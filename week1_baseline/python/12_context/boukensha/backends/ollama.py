@@ -34,6 +34,70 @@ class Ollama(Base):
             "cost_per_million": {"input": 0.0, "output": 0.0},
             "usage_unit": "local_compute",
         },
+        # Same family as qwen3.5:4b above, one size class up — added to fill
+        # in the gap between that model's near-total failure and
+        # qwen3.6:27b's ~67% pass rate on the bakery/return_to_midgaard
+        # evals. Context window matches the 4b entry (vendor-unconfirmed).
+        "qwen3.5:9b": {
+            "context_window": 128_000,
+            "cost_per_million": {"input": 0.0, "output": 0.0},
+            "usage_unit": "local_compute",
+        },
+        # Cross-family same-size-class control against qwen3.6:27b — Gemma 2
+        # is a different lineage from the Gemma 4/qwen3.x entries above.
+        # Context window is Gemma 2's real vendor-documented figure (8k),
+        # NOT copied from the other entries — Gemma 2 was never trained past
+        # that, so requesting more via num_ctx would degrade rather than help.
+        "gemma2:27b": {
+            "context_window": 8_192,
+            "cost_per_million": {"input": 0.0, "output": 0.0},
+            "usage_unit": "local_compute",
+        },
+        # Same size class as qwen3.6:27b/gemma2:27b above, but Gemma 4-gen
+        # like the gemma4:e4b entry — a fairer context budget (128k) than
+        # gemma2:27b's 8k for models otherwise being compared side by side.
+        "gemma4:26b": {
+            "context_window": 128_000,
+            "cost_per_million": {"input": 0.0, "output": 0.0},
+            "usage_unit": "local_compute",
+        },
+        # Cohere Command R7B — purpose-built for tool-use/RAG rather than
+        # general chat, unlike every other entry here. Included as a control
+        # for whether tool-calling-specific training beats raw size (see
+        # qwen3.6:35b-a3b underperforming qwen3.6:27b despite being bigger).
+        # 128k is Cohere's documented context window for this model.
+        "command-r7b:latest": {
+            "context_window": 128_000,
+            "cost_per_million": {"input": 0.0, "output": 0.0},
+            "usage_unit": "local_compute",
+        },
+        # Cross-family, smaller size class — Llama 3.1's documented context
+        # window is 128k.
+        "llama3.1:8b": {
+            "context_window": 128_000,
+            "cost_per_million": {"input": 0.0, "output": 0.0},
+            "usage_unit": "local_compute",
+        },
+        # Cross-family, smaller size class — this tag resolves to Mistral 7B
+        # Instruct v0.3 on the Ollama library, documented context window 32k.
+        "mistral:latest": {
+            "context_window": 32_000,
+            "cost_per_million": {"input": 0.0, "output": 0.0},
+            "usage_unit": "local_compute",
+        },
+        # UNVERIFIED — a custom/private tag, not a public model this doesn't
+        # have specs for; no Ollama server was reachable from where this was
+        # added to check `ollama show agents-a1` for its real base model and
+        # trained context length. 32k here is a conservative placeholder
+        # (matching models.py's DEFAULT_CONTEXT_WINDOW), not a vendor figure
+        # — replace with the real number once known, since an inflated value
+        # would silently degrade this model's eval results via a too-large
+        # num_ctx request.
+        "agents-a1:latest": {
+            "context_window": 32_000,
+            "cost_per_million": {"input": 0.0, "output": 0.0},
+            "usage_unit": "local_compute",
+        },
     }
 
     def __init__(self, *, model: str, host: str = "http://localhost:11434") -> None:

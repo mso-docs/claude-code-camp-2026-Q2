@@ -19,6 +19,15 @@ TABLE = {
     "qwen3.6:27b": {"context_window": 256_000},
     "qwen3.6:35b-a3b": {"context_window": 256_000},
     "qwen3.5:4b": {"context_window": 128_000},
+    "qwen3.5:9b": {"context_window": 128_000},
+    "gemma2:27b": {"context_window": 8_192},
+    "gemma4:26b": {"context_window": 128_000},
+    "command-r7b:latest": {"context_window": 128_000},
+    "llama3.1:8b": {"context_window": 128_000},
+    "mistral:latest": {"context_window": 32_000},
+    # Unverified custom/private tag — see backends/ollama.py's MODELS entry
+    # for the same model; replace once the real spec is known.
+    "agents-a1:latest": {"context_window": 32_000},
 }
 
 DEFAULT_CONTEXT_WINDOW = 32_000

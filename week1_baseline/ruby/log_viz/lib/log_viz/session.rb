@@ -1,4 +1,5 @@
 require "json"
+require "time"
 
 module LogViz
   # Parses a Boukensha session .jsonl log into an ordered list of entries
@@ -9,7 +10,7 @@ module LogViz
                        :stop_reason, :reason, :iterations, :tokens, :before, :dropped,
                        :running_turn_tokens, :redacted,
                        :task, :provider, :model, :input_tokens, :output_tokens,
-                       :cost_usd, :usage_unit, :usage_level,
+                       :cost_usd, :usage_unit, :usage_level, :at,
                        keyword_init: true)
 
     # One sample per `response`, in order. Drives the in-transcript chips (§2.3)
@@ -33,7 +34,7 @@ module LogViz
 
     attr_reader :id, :path, :started_at, :entries,
                 :total_input_tokens, :total_output_tokens, :snapshot,
-                :usage_series, :peak_input_tokens
+                :usage_series, :peak_input_tokens, :last_event_at
 
     def self.load(path)
       new(path).tap(&:parse!)
@@ -63,6 +64,7 @@ module LogViz
         next if line.empty?
 
         event = JSON.parse(line)
+        @last_event_at = event["at"] || @last_event_at
 
         case event["phase"]
         when "session_start"
@@ -131,7 +133,7 @@ module LogViz
           call = pending_calls.shift || {}
           @entries << Entry.new(type: :tool, tool_name: event["name"] || call[:name], tool_args: call[:args],
                                  tool_result: event["result"], tool_ok: event.fetch("ok", true),
-                                 tool_error: event["error"],
+                                 tool_error: event["error"], at: event["at"],
                                  turn: current_turn, iteration: current_iteration)
         when "turn_end"
           @entries << Entry.new(type: :turn_end, reason: event["reason"],
@@ -213,6 +215,51 @@ module LogViz
       end
     end
 
+    # ---- movement trace (Movement view) ----------------------------------
+    # The MUD server prints the room name as an ANSI-yellow header line at
+    # the top of any `move` or bare `look` result — never on a `look
+    # <direction>` peek (no header) and never on a blocked `move` ("Alas,
+    # you cannot go that way..."). That header's presence/absence is the
+    # only signal boukensha's tool_result text gives for "did the room
+    # change", so it's what this section keys off instead of a game-side
+    # position field (none exists in the log).
+    ROOM_HEADER_RE = /\A\s*\e\[(?:[0-9]+;)*33m(.*?)\e\[0m/
+
+    Segment = Struct.new(:room, :visit_index, :arrived_at, :start_offset_s, :duration_s,
+                         :blocked_count, :look_count, keyword_init: true)
+
+    def movement_trace
+      @movement_trace ||= build_movement_trace
+    end
+
+    def movement_edges
+      movement_trace.each_cons(2).map { |a, b| [a.room, b.room] }.uniq
+    end
+
+    # One row per distinct room, aggregated across every visit — feeds both
+    # the summary table and the map nodes' size/fill (dwell time is the
+    # magnitude that matters for "how long did they spend here", not just
+    # whether they passed through).
+    def movement_room_stats = self.class.room_stats_for(movement_trace)
+
+    # Class-level so /movement/grid can compute the same per-room rollup
+    # for a MovementResults::Row's cached trace, which has no full Session
+    # object behind it (see movement_results.rb — only the trace array is
+    # kept, to avoid holding ~400 sessions in memory at once).
+    def self.room_stats_for(trace)
+      stats = Hash.new { |h, k| h[k] = { room: k, visits: 0, blocked: 0, looks: 0, dwell_s: 0.0 } }
+      trace.each do |seg|
+        s = stats[seg.room]
+        s[:visits]  += 1
+        s[:blocked] += seg.blocked_count
+        s[:looks]   += seg.look_count
+        s[:dwell_s] += seg.duration_s.to_f
+      end
+      stats.values.sort_by { |s| -s[:dwell_s] }
+    end
+
+    def total_blocked_count = movement_trace.sum(&:blocked_count)
+
     def limit_reason?(reason) = !reason.nil? && reason != "completed"
 
     # Worst turn by token spend — the one closest to (or over) the cap.
@@ -265,6 +312,64 @@ module LogViz
     end
 
     private
+
+    # `move` results either carry a new room header (arrival — closes the
+    # current segment and opens the next) or don't (blocked — a wall bump,
+    # tallied against the room the model is still standing in). A bare
+    # `look` (no direction) re-prints the current room's header without
+    # moving; it opens the very first segment (the spawn room, seen before
+    # any move happens) and otherwise just increments the current segment's
+    # look_count rather than starting a new one.
+    def build_movement_trace
+      segments = []
+      current  = nil
+
+      entries.each do |e|
+        next unless e.type == :tool && %w[move look].include?(e.tool_name)
+
+        room = extract_room(e.tool_result)
+
+        if e.tool_name == "move"
+          if room
+            close_segment(current, e.at)
+            segments << (current = open_segment(room, segments.length, e.at))
+          elsif current
+            current.blocked_count += 1
+          end
+        elsif current.nil? && room
+          segments << (current = open_segment(room, segments.length, e.at))
+        elsif current
+          current.look_count += 1
+        end
+      end
+
+      close_segment(current, @last_event_at)
+      segments
+    end
+
+    def open_segment(room, index, at)
+      Segment.new(room: room, visit_index: index, arrived_at: at,
+                  start_offset_s: offset_seconds(at), blocked_count: 0, look_count: 0)
+    end
+
+    def close_segment(segment, at)
+      return unless segment && at
+
+      segment.duration_s = [offset_seconds(at) - segment.start_offset_s.to_f, 0.0].max
+    end
+
+    def offset_seconds(at)
+      return 0.0 unless at && @started_at
+
+      Time.parse(at) - Time.parse(@started_at)
+    rescue ArgumentError
+      0.0
+    end
+
+    def extract_room(text)
+      m = ROOM_HEADER_RE.match(text.to_s)
+      m && m[1].strip
+    end
 
     def extract_text(content)
       case content
