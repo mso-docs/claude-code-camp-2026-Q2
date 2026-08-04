@@ -105,6 +105,25 @@ def _load_env_vars(env_file: Path) -> dict:
         out[key.strip()] = value.strip()
     return out
 
+
+def configured_ollama_host() -> str:
+    """Resolve Ollama exactly where eval subprocesses get their setting.
+
+    The returned private URL is for requests only. Callers must not include it
+    in logs/results; discovery errors are sanitized by ollama_catalog.py.
+    """
+    runtime_env = {**os.environ, **_load_env_vars(REAL_ENV_FILE)}
+    if runtime_env.get("OLLAMA_HOST"):
+        return runtime_env["OLLAMA_HOST"]
+
+    settings_file = REPO_ROOT / ".boukensha" / "settings.yaml"
+    if settings_file.exists():
+        settings = yaml.safe_load(settings_file.read_text()) or {}
+        configured = (settings.get("ollama") or {}).get("host")
+        if configured:
+            return str(configured)
+    return "http://localhost:11434"
+
 # The shared test account every existing manual test run (AGENTS.md Test 1-4)
 # already uses — see .boukensha/settings.yaml.
 DEFAULT_MUD = {"host": "localhost", "port": 4000, "username": "dummy", "password": "helloworld"}

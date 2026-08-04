@@ -89,14 +89,15 @@ rather stick with defaults and not have it tracked.
 ### Using your local Ollama server instead of Anthropic
 
 No API key needed — just flip `provider`/`model`/`ollama.host` in
-`settings.yaml` as shown above. This required two small additions beyond
-the strict Ruby port (documented inline in the code, both untracked by
-the step-12 commit):
+`settings.yaml` as shown above. This includes three additions beyond the
+strict Ruby port:
 
-- `qwen3.6:27b` and `qwen3.6:35b-a3b` added to `Ollama.MODELS`
-  (`boukensha/backends/ollama.py`) — models not in this table are
-  rejected outright.
-- Both also added to `boukensha/models.py`'s `TABLE` (which the Ruby
+- `Ollama.MODELS` in `boukensha/backends/ollama.py` is now a table of
+  verified metadata overrides, not an allowlist. Any non-empty model name
+  can be sent to Ollama; the server remains authoritative for whether that
+  tag is installed.
+- Known models such as `qwen3.6:27b` and `qwen3.6:35b-a3b` are also in
+  `boukensha/models.py`'s `TABLE` (which the Ruby
   reference keeps Anthropic-only) — without this, `Context`'s
   `context_window` would fall back to a 32,000-token default and
   auto-compaction would fire almost immediately against a real
@@ -105,8 +106,11 @@ the step-12 commit):
   too — the Ruby reference has no settings.yaml-driven way to point at a
   non-default Ollama host at all.
 
-If you're running a different local model, add it to both `MODELS`
-tables (context window + whatever else you want tracked) the same way.
+An unregistered local model works without a code change and uses the
+conservative 32,000-token context fallback. Add verified metadata only when
+you need context accounting to match a different known limit. The eval runner
+can discover installed models directly from this configured host; see
+`evals/README.md`'s "Ollama model discovery" section.
 
 OpenRouter is the exception to backend model whitelisting: set
 `provider: openrouter` and use any `vendor/model` slug. Unknown slugs still fall back
