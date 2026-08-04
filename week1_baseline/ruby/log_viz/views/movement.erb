@@ -1,0 +1,157 @@
+<%= erb :_header, layout: false %>
+
+<% if @segments.empty? %>
+  <p class="story-note">
+    No room movement recorded &mdash; no <code>move</code>/<code>look</code> tool calls with a
+    recognizable room header were found in this session's log.
+  </p>
+<% else %>
+  <p class="story-note">
+    Reconstructed from this session's own <code>move</code>/<code>look</code> results &mdash; room
+    layout is this run's own path (not CircleMUD's real map), positioned so visited rooms don't
+    overlap. Node size and color encode time spent there; blocked = a move attempt that bounced off
+    a wall without changing rooms.
+  </p>
+
+  <div class="move-summary">
+    <div class="move-map-wrap">
+      <%= movement_map_svg(@positions, @edges, @room_stats, @segments) %>
+    </div>
+
+    <table class="move-table">
+      <thead>
+        <tr>
+          <th>Room</th>
+          <th class="nowrap">Visits</th>
+          <th class="nowrap">Time spent</th>
+          <th class="nowrap">Blocked</th>
+          <th class="nowrap">Looked</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @room_stats.each do |stat| %>
+          <tr data-room-id="<%= anchor_slug('room', stat[:room]) %>">
+            <td><%= text_html(stat[:room]) %></td>
+            <td class="nowrap"><%= stat[:visits] %></td>
+            <td class="nowrap"><%= fmt_duration(stat[:dwell_s]) %></td>
+            <td class="nowrap"><%= stat[:blocked].positive? ? stat[:blocked] : "&mdash;" %></td>
+            <td class="nowrap"><%= stat[:looks].positive? ? stat[:looks] : "&mdash;" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="move-player-heading">Replay</h2>
+  <div class="move-player" id="movement-player">
+    <div class="move-map-wrap">
+      <%= movement_map_svg(@positions, @edges, @room_stats, @segments, with_player: true) %>
+    </div>
+
+    <div class="move-controls">
+      <button type="button" id="move-play" class="move-play-btn">&#9654; Play</button>
+      <input type="range" id="move-scrubber" class="move-scrubber" min="0"
+             max="<%= @total_duration_s.round(2) %>" value="0" step="0.1">
+      <select id="move-speed" class="move-speed">
+        <option value="1">1&times;</option>
+        <option value="4" selected>4&times;</option>
+        <option value="10">10&times;</option>
+        <option value="30">30&times;</option>
+      </select>
+    </div>
+
+    <div class="move-readout" id="move-readout">
+      <span class="move-readout-room">&mdash;</span>
+      <span class="move-readout-time"></span>
+    </div>
+  </div>
+
+  <script type="application/json" id="movement-data"><%= movement_trace_json(@segments, @positions) %></script>
+  <script>
+    (function () {
+      var data = JSON.parse(document.getElementById("movement-data").textContent);
+      if (!data.length) return;
+
+      var totalDuration = data[data.length - 1].start + data[data.length - 1].duration;
+      var dot = document.getElementById("player-dot");
+      var scrubber = document.getElementById("move-scrubber");
+      var playBtn = document.getElementById("move-play");
+      var speedSelect = document.getElementById("move-speed");
+      var readoutRoom = document.querySelector(".move-readout-room");
+      var readoutTime = document.querySelector(".move-readout-time");
+      var roomNodes = document.querySelectorAll("#movement-player .move-room");
+      var rows = document.querySelectorAll(".move-table tbody tr");
+
+      var elapsed = 0;
+      var playing = false;
+      var lastTick = null;
+
+      function segmentAt(t) {
+        var seg = data[0];
+        for (var i = 0; i < data.length; i++) {
+          if (data[i].start <= t) { seg = data[i]; } else { break; }
+        }
+        return seg;
+      }
+
+      function render(t) {
+        var seg = segmentAt(t);
+        if (dot) {
+          dot.setAttribute("cx", seg.x);
+          dot.setAttribute("cy", seg.y);
+        }
+
+        roomNodes.forEach(function (g) {
+          g.classList.toggle("current", g.dataset.roomId === seg.room_id);
+        });
+        rows.forEach(function (r) {
+          r.classList.toggle("current", r.dataset.roomId === seg.room_id);
+        });
+
+        var inRoom = Math.max(0, t - seg.start);
+        readoutRoom.textContent = seg.room;
+        var parts = ["here " + inRoom.toFixed(0) + "s"];
+        if (seg.blocked) parts.push(seg.blocked + " blocked move" + (seg.blocked === 1 ? "" : "s"));
+        if (seg.looks) parts.push(seg.looks + " look" + (seg.looks === 1 ? "" : "s"));
+        readoutTime.textContent = parts.join(" · ");
+
+        scrubber.value = t;
+      }
+
+      function tick(now) {
+        if (!playing) return;
+        if (lastTick === null) { lastTick = now; }
+        var deltaS = (now - lastTick) / 1000;
+        lastTick = now;
+
+        elapsed += deltaS * parseFloat(speedSelect.value);
+        if (elapsed >= totalDuration) {
+          elapsed = totalDuration;
+          playing = false;
+          playBtn.textContent = "▶ Play";
+        }
+        render(elapsed);
+        if (playing) { requestAnimationFrame(tick); }
+      }
+
+      playBtn.addEventListener("click", function () {
+        playing = !playing;
+        playBtn.textContent = playing ? "⏸ Pause" : "▶ Play";
+        if (playing) {
+          if (elapsed >= totalDuration) { elapsed = 0; }
+          lastTick = null;
+          requestAnimationFrame(tick);
+        }
+      });
+
+      scrubber.addEventListener("input", function () {
+        playing = false;
+        playBtn.textContent = "▶ Play";
+        elapsed = parseFloat(scrubber.value);
+        render(elapsed);
+      });
+
+      render(0);
+    })();
+  </script>
+<% end %>

@@ -1,0 +1,128 @@
+<a href="/movement" class="back">&larr; Movement</a>
+
+<h1>Side by side &mdash; <%= text_html(@scenario) %> / <%= text_html(@mode) %></h1>
+<p class="meta">
+  Each model's most recent run in this scenario/mode, drawn on its <em>own</em>
+  layout (like the single-session Movement view, not the shared world map) so
+  each panel is exactly what that model itself explored &mdash; side by side for
+  shape and pace, not lined up room-for-room. The shared control below steps
+  through room arrivals in lockstep (the Nth room each model reached), since
+  this harness has no fixed per-command budget to synchronize on instead.
+</p>
+
+<p class="move-scenario-links">
+  <% @scenario_modes.each_with_index do |((scenario, mode), n), i| %>
+    <% if scenario == @scenario && mode == @mode %>
+      <span class="current"><%= text_html(scenario) %> / <%= text_html(mode) %> (<%= n %>)</span>
+    <% else %>
+      <a href="/movement/grid?scenario=<%= URI.encode_www_form_component(scenario) %>&amp;mode=<%= URI.encode_www_form_component(mode) %>"><%= text_html(scenario) %> / <%= text_html(mode) %> (<%= n %>)</a>
+    <% end %>
+    <%= " &middot; " if i < @scenario_modes.length - 1 %>
+  <% end %>
+</p>
+
+<% if @panels.empty? %>
+  <p class="story-note">No movement data for this scenario/mode.</p>
+<% else %>
+  <div class="move-controls">
+    <button type="button" id="move-play" class="move-play-btn">&#9654; Play</button>
+    <input type="range" id="move-scrubber" class="move-scrubber" min="0"
+           max="<%= [@max_steps - 1, 0].max %>" value="0" step="1">
+    <select id="move-speed" class="move-speed">
+      <option value="2">2 rooms/s</option>
+      <option value="4" selected>4 rooms/s</option>
+      <option value="8">8 rooms/s</option>
+    </select>
+  </div>
+
+  <div class="move-grid">
+    <% @panels.each do |p| %>
+      <div class="move-grid-panel" data-panel-id="<%= anchor_slug('model', p[:model]) %>">
+        <div class="move-grid-panel-title">
+          <span class="trend-legend-dot" style="background:<%= @model_colors[p[:model]] %>"></span><%= text_html(p[:model]) %>
+        </div>
+        <%= movement_map_svg(p[:positions], p[:edges], p[:room_stats], p[:trace], width: movement_grid_panel_w, height: movement_grid_panel_h, with_player: true, label_top_n: 5, label_font_size: 6.5) %>
+        <div class="move-grid-readout">&mdash;</div>
+      </div>
+    <% end %>
+  </div>
+
+  <script type="application/json" id="grid-data"><%= movement_grid_json(@panels) %></script>
+  <script>
+    (function () {
+      var panels = JSON.parse(document.getElementById("grid-data").textContent);
+      if (!panels.length) return;
+
+      var scrubber = document.getElementById("move-scrubber");
+      var playBtn = document.getElementById("move-play");
+      var speedSelect = document.getElementById("move-speed");
+      var maxStep = Math.max.apply(null, panels.map(function (p) { return p.points.length ? p.points.length - 1 : 0; }));
+
+      var step = 0;
+      var playing = false;
+      var lastTick = null;
+      var acc = 0;
+
+      function render(s) {
+        panels.forEach(function (panel) {
+          if (!panel.points.length) return;
+
+          var idx = Math.min(s, panel.points.length - 1);
+          var pt = panel.points[idx];
+          var container = document.querySelector('.move-grid-panel[data-panel-id="' + panel.id + '"]');
+          if (!container) return;
+
+          var dot = container.querySelector(".player-dot");
+          if (dot) { dot.setAttribute("cx", pt.x); dot.setAttribute("cy", pt.y); }
+
+          container.querySelectorAll(".move-room").forEach(function (g) {
+            g.classList.toggle("current", g.dataset.roomId === pt.room_id);
+          });
+
+          container.querySelector(".move-grid-readout").textContent =
+            pt.room + " — room " + (idx + 1) + "/" + panel.points.length;
+        });
+        scrubber.value = s;
+      }
+
+      function tick(now) {
+        if (!playing) return;
+        if (lastTick === null) { lastTick = now; }
+        acc += (now - lastTick) / 1000;
+        lastTick = now;
+
+        var interval = 1 / parseFloat(speedSelect.value);
+        while (acc >= interval && step < maxStep) {
+          step += 1;
+          acc -= interval;
+        }
+        if (step >= maxStep) {
+          playing = false;
+          playBtn.textContent = "▶ Play";
+        }
+        render(step);
+        if (playing) { requestAnimationFrame(tick); }
+      }
+
+      playBtn.addEventListener("click", function () {
+        playing = !playing;
+        playBtn.textContent = playing ? "⏸ Pause" : "▶ Play";
+        if (playing) {
+          if (step >= maxStep) { step = 0; }
+          lastTick = null;
+          acc = 0;
+          requestAnimationFrame(tick);
+        }
+      });
+
+      scrubber.addEventListener("input", function () {
+        playing = false;
+        playBtn.textContent = "▶ Play";
+        step = parseInt(scrubber.value, 10);
+        render(step);
+      });
+
+      render(0);
+    })();
+  </script>
+<% end %>

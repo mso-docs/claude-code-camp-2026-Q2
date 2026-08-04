@@ -1,0 +1,90 @@
+<a href="/movement" class="back">&larr; Movement</a>
+
+<h1>World heatmap</h1>
+<p class="meta">
+  Every current-scoring run's movement, from every scenario, mode, and model at
+  once, rolled onto CircleMUD's real room graph as one cumulative traffic map.
+  No playback here &mdash; runs span days, so there's no one shared clock worth
+  scrubbing; this is a single snapshot of where all that effort concentrated.
+</p>
+
+<p class="move-scenario-links">
+  <% if @scenario.nil? && @mode.nil? %>
+    <span class="current">All scenarios &amp; modes</span>
+  <% else %>
+    <a href="/movement/world<%= @metric == :visits ? "?metric=visits" : "" %>">All scenarios &amp; modes</a>
+  <% end %>
+  &middot;
+  <% @scenario_modes.each_with_index do |((scenario, mode), n), i| %>
+    <% qs = "scenario=#{URI.encode_www_form_component(scenario)}&mode=#{URI.encode_www_form_component(mode)}" %>
+    <% qs += "&metric=visits" if @metric == :visits %>
+    <% if scenario == @scenario && mode == @mode %>
+      <span class="current"><%= text_html(scenario) %> / <%= text_html(mode) %> (<%= n %>)</span>
+    <% else %>
+      <a href="/movement/world?<%= qs %>"><%= text_html(scenario) %> / <%= text_html(mode) %> (<%= n %>)</a>
+    <% end %>
+    <%= " &middot; " if i < @scenario_modes.length - 1 %>
+  <% end %>
+</p>
+
+<p class="move-scenario-links">
+  Metric:
+  <% base_qs = [@scenario && "scenario=#{URI.encode_www_form_component(@scenario)}", @mode && "mode=#{URI.encode_www_form_component(@mode)}"].compact.join("&") %>
+  <% if @metric == :dwell_s %>
+    <span class="current">Total dwell time</span>
+  <% else %>
+    <a href="/movement/world?<%= base_qs %><%= "&" unless base_qs.empty? %>metric=dwell">Total dwell time</a>
+  <% end %>
+  &middot;
+  <% if @metric == :visits %>
+    <span class="current">Visit count</span>
+  <% else %>
+    <a href="/movement/world?<%= base_qs %><%= "&" unless base_qs.empty? %>metric=visits">Visit count</a>
+  <% end %>
+</p>
+
+<% if @traffic.empty? %>
+  <p class="story-note">No movement data for this filter.</p>
+<% else %>
+  <p class="meta">
+    <%= @run_count %> run<%= "s" unless @run_count == 1 %> &middot;
+    <%= @traffic.length %> distinct rooms placed on the map &middot;
+    <%= @resolved_segments %>/<%= @total_segments %> visited-room segments resolved
+    (<%= @total_segments.positive? ? ((100.0 * @resolved_segments / @total_segments).round(1)) : 0 %>%) &mdash;
+    the rest used a room name too generic to place uniquely (see the Movement tab's
+    note on cross-zone name reuse).
+  </p>
+
+  <div class="heat-legend">
+    <span class="heat-legend-label">least traffic</span>
+    <span class="heat-legend-swatch"></span>
+    <span class="heat-legend-label">
+      most traffic (<%= @metric == :visits ? "#{@traffic.max_by(&:visits).visits} visits" : fmt_duration(@traffic.max_by(&:dwell_s).dwell_s) %>)
+    </span>
+  </div>
+
+  <div class="move-map-wrap">
+    <%= movement_world_heatmap_svg(@positions, @edges, @traffic, @world, metric: @metric) %>
+  </div>
+
+  <table class="breakdown-table move-world-table">
+    <thead>
+      <tr>
+        <th>Room</th>
+        <th class="nowrap">Total dwell</th>
+        <th class="nowrap">Visits</th>
+        <th class="nowrap">Runs</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @traffic.sort_by { |t| -t[@metric] }.first(30).each do |t| %>
+        <tr>
+          <td><%= text_html(@world.name_for(t.vnum)) %></td>
+          <td class="nowrap"><%= fmt_duration(t.dwell_s) %></td>
+          <td class="nowrap"><%= t.visits %></td>
+          <td class="nowrap"><%= t.run_count %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>

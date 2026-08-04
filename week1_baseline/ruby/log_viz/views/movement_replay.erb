@@ -1,0 +1,211 @@
+<a href="/movement" class="back">&larr; Movement</a>
+
+<h1>Replay &mdash; <%= text_html(@scenario) %> / <%= text_html(@mode) %></h1>
+<p class="meta">
+  Each model's most recent run in this scenario/mode, played back together on
+  CircleMUD's real room graph (not each session's own ad-hoc layout). Rooms glow
+  by how many models are currently &mdash; or were very recently &mdash; standing
+  in them, fading out over the <%= movement_heat_decay_s %>s after everyone
+  leaves, as a group traffic trail rather than individual markers.
+</p>
+
+<p class="move-scenario-links">
+  <% @scenario_modes.each_with_index do |((scenario, mode), n), i| %>
+    <% if scenario == @scenario && mode == @mode %>
+      <span class="current"><%= text_html(scenario) %> / <%= text_html(mode) %> (<%= n %>)</span>
+    <% else %>
+      <a href="/movement/replay?scenario=<%= URI.encode_www_form_component(scenario) %>&amp;mode=<%= URI.encode_www_form_component(mode) %>"><%= text_html(scenario) %> / <%= text_html(mode) %> (<%= n %>)</a>
+    <% end %>
+    <%= " &middot; " if i < @scenario_modes.length - 1 %>
+  <% end %>
+</p>
+
+<% if @runs_by_model.empty? %>
+  <p class="story-note">No movement data for this scenario/mode.</p>
+<% else %>
+  <div class="heat-legend">
+    <span class="heat-legend-label">no recent traffic</span>
+    <span class="heat-legend-swatch"></span>
+    <span class="heat-legend-label">all <%= @runs_by_model.length %> model<%= "s" unless @runs_by_model.length == 1 %> here at once</span>
+  </div>
+
+  <div class="move-map-wrap">
+    <%= movement_replay_map_svg(@positions, @edges, @world) %>
+  </div>
+
+  <div class="move-controls">
+    <button type="button" id="move-play" class="move-play-btn">&#9654; Play</button>
+    <input type="range" id="move-scrubber" class="move-scrubber" min="0"
+           max="<%= @total_duration_s.round(2) %>" value="0" step="0.1">
+    <select id="move-speed" class="move-speed">
+      <option value="1">1&times;</option>
+      <option value="4" selected>4&times;</option>
+      <option value="10">10&times;</option>
+      <option value="30">30&times;</option>
+    </select>
+  </div>
+
+  <table class="breakdown-table move-replay-readout">
+    <thead>
+      <tr><th>Model</th><th>Room</th><th class="nowrap">Time here</th></tr>
+    </thead>
+    <tbody>
+      <% @runs_by_model.keys.sort.each do |model| %>
+        <tr data-model-id="<%= anchor_slug('model', model) %>">
+          <td><span class="trend-legend-dot" style="background:<%= @model_colors[model] %>"></span><%= text_html(model) %></td>
+          <td class="replay-readout-room">&mdash;</td>
+          <td class="nowrap replay-readout-time"></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <script type="application/json" id="replay-data"><%= movement_replay_json(@runs_by_model, @positions) %></script>
+  <script type="application/json" id="heat-ramp-data"><%= heatmap_ramp_json %></script>
+  <script>
+    (function () {
+      var data = JSON.parse(document.getElementById("replay-data").textContent);
+      var ramp = JSON.parse(document.getElementById("heat-ramp-data").textContent);
+      var models = Object.keys(data);
+      if (!models.length) return;
+
+      // Trace-time seconds a room keeps glowing after the last model
+      // present in it leaves — matches the value embedded in the page's
+      // own note above (MOVEMENT_HEAT_DECAY_S), so the copy always agrees
+      // with the actual animation.
+      var DECAY_S = <%= movement_heat_decay_s %>;
+      var totalDuration = <%= @total_duration_s.round(2) %>;
+      var scrubber = document.getElementById("move-scrubber");
+      var playBtn = document.getElementById("move-play");
+      var speedSelect = document.getElementById("move-speed");
+
+      var roomCircles = {};
+      document.querySelectorAll("#movement-replay-map .move-room").forEach(function (g) {
+        roomCircles[g.dataset.vnum] = g.querySelector("circle");
+      });
+
+      var elapsed = 0;
+      var playing = false;
+      var lastTick = null;
+
+      function segmentAt(points, t) {
+        if (!points.length) return null;
+        var seg = points[0];
+        for (var i = 0; i < points.length; i++) {
+          if (points[i].start <= t) { seg = points[i]; } else { break; }
+        }
+        return seg;
+      }
+
+      // Each model contributes at most 1.0 of heat to whichever room it's
+      // most recently touched — full while actually standing there,
+      // decaying linearly to 0 over DECAY_S seconds after it moves on.
+      // Revisits to the same room don't stack for one model (max, not
+      // sum); heat per room is then the sum across models, so a room five
+      // models are all crowded into glows brighter than one model passing
+      // through alone.
+      function heatByRoom(t) {
+        var heat = {};
+        models.forEach(function (model) {
+          var best = {};
+          data[model].points.forEach(function (p) {
+            var contribution;
+            if (t < p.start) {
+              contribution = 0;
+            } else if (t <= p.start + p.duration) {
+              contribution = 1;
+            } else {
+              contribution = Math.max(0, 1 - ((t - (p.start + p.duration)) / DECAY_S));
+            }
+            if (contribution > 0) { best[p.vnum] = Math.max(best[p.vnum] || 0, contribution); }
+          });
+          Object.keys(best).forEach(function (vnum) { heat[vnum] = (heat[vnum] || 0) + best[vnum]; });
+        });
+        return heat;
+      }
+
+      function hexToRgb(hex) {
+        var n = hex.replace("#", "");
+        return [parseInt(n.slice(0, 2), 16), parseInt(n.slice(2, 4), 16), parseInt(n.slice(4, 6), 16)];
+      }
+
+      function blendHex(a, b, frac) {
+        var ca = hexToRgb(a), cb = hexToRgb(b);
+        var rgb = ca.map(function (v, i) { return Math.round(v + (cb[i] - v) * frac); });
+        return "#" + rgb.map(function (v) { return v.toString(16).padStart(2, "0"); }).join("");
+      }
+
+      // Same interpolation as app.rb's heatmap_fill, over the same ramp
+      // (embedded via heatmap_ramp_json) — the /evals success-rate heatmap
+      // and this group-traffic heatmap read as the same visual language.
+      function heatColor(frac) {
+        if (frac <= 0) return "#e1e0d9";
+        var pos = Math.min(Math.max(frac, 0), 1) * (ramp.length - 1);
+        var lo = Math.floor(pos), hi = Math.min(lo + 1, ramp.length - 1);
+        return blendHex(ramp[lo], ramp[hi], pos - lo);
+      }
+
+      function render(t) {
+        var heat = heatByRoom(t);
+        var maxPossible = models.length;
+        Object.keys(roomCircles).forEach(function (vnum) {
+          var frac = Math.min((heat[vnum] || 0) / maxPossible, 1);
+          roomCircles[vnum].setAttribute("fill", heatColor(frac));
+        });
+
+        models.forEach(function (model) {
+          var entry = data[model];
+          var row = document.querySelector('tr[data-model-id="' + entry.id + '"]');
+          if (!row) return;
+
+          var seg = segmentAt(entry.points, t);
+          if (!seg) {
+            if (!entry.points.length) {
+              row.querySelector(".replay-readout-room").textContent = "(no room names in this run resolved to the shared map)";
+            }
+            return;
+          }
+          row.querySelector(".replay-readout-room").textContent = seg.room;
+          row.querySelector(".replay-readout-time").textContent = Math.max(0, t - seg.start).toFixed(0) + "s";
+        });
+
+        scrubber.value = t;
+      }
+
+      function tick(now) {
+        if (!playing) return;
+        if (lastTick === null) { lastTick = now; }
+        var deltaS = (now - lastTick) / 1000;
+        lastTick = now;
+
+        elapsed += deltaS * parseFloat(speedSelect.value);
+        if (elapsed >= totalDuration) {
+          elapsed = totalDuration;
+          playing = false;
+          playBtn.textContent = "▶ Play";
+        }
+        render(elapsed);
+        if (playing) { requestAnimationFrame(tick); }
+      }
+
+      playBtn.addEventListener("click", function () {
+        playing = !playing;
+        playBtn.textContent = playing ? "⏸ Pause" : "▶ Play";
+        if (playing) {
+          if (elapsed >= totalDuration) { elapsed = 0; }
+          lastTick = null;
+          requestAnimationFrame(tick);
+        }
+      });
+
+      scrubber.addEventListener("input", function () {
+        playing = false;
+        playBtn.textContent = "▶ Play";
+        elapsed = parseFloat(scrubber.value);
+        render(elapsed);
+      });
+
+      render(0);
+    })();
+  </script>
+<% end %>

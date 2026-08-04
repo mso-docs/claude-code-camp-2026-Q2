@@ -1,4 +1,13 @@
-<h1>Scoreboard</h1>
+<h1>Scoreboard<%= " (Legacy)" if @legacy %></h1>
+
+<% if @legacy %>
+  <div class="banner banner-warn">
+    &#9888; Test set — ranked from runs scored before <code>mud_connected</code>/<code>content_matched</code>
+    existed, when any non-empty output file counted as a pass. Not comparable to
+    <a href="/scoreboard">the current scoreboard</a> — a model could rank well here purely by having run
+    more often before the harness was hardened.
+  </div>
+<% end %>
 
 <% if @leaderboard.empty? %>
   <p class="empty">No eval results found in <code><%= settings.eval_results_dir %></code>. Run <code>python3 evals/run_bakery.py</code> to generate some.</p>
@@ -8,8 +17,8 @@
     reprompt2, whatever's been run) — no attempt to separate out which scenario a pass came from.
     Ranked by win rate, ties broken by whichever model has more total runs behind it. New models
     show up here automatically the next time you run an eval batch against them; nothing needs to
-    be added by hand. See <a href="/evals">Evals</a> for the scenario-by-scenario breakdown this
-    collapses.
+    be added by hand. See <a href="<%= @legacy ? "/evals/legacy" : "/evals" %>">Evals<%= " (Legacy)" if @legacy %></a>
+    for the scenario-by-scenario breakdown this collapses.
   </p>
 
   <table class="leaderboard">

@@ -8,6 +8,7 @@
   @header_title    ||= "Session #{@session.id}"
   @transcript_path ||= "/sessions/#{@session.id}"
   @story_path      ||= "/sessions/#{@session.id}/story"
+  @movement_path   ||= "/sessions/#{@session.id}/movement"
 %>
 <a href="<%= @back_path %>" class="back">&larr; <%= @back_label %></a>
 
@@ -27,6 +28,12 @@
     <span class="current">Story view</span>
   <% else %>
     <a href="<%= @story_path %>">Story view</a>
+  <% end %>
+  &middot;
+  <% if @current_view == :movement %>
+    <span class="current">Movement</span>
+  <% else %>
+    <a href="<%= @movement_path %>">Movement</a>
   <% end %>
 </p>
 

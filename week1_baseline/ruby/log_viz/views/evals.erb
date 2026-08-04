@@ -1,4 +1,13 @@
-<h1 id="evals-top">Evals</h1>
+<h1 id="evals-top">Evals<%= " (Legacy)" if @legacy %></h1>
+
+<% if @legacy %>
+  <div class="banner banner-warn">
+    &#9888; Test set — these runs were scored before <code>mud_connected</code>/<code>content_matched</code>
+    existed (score.py's pre-hardening rule: any non-empty output file counted as a pass, with no check that
+    the agent actually connected to the MUD or found the real target). Kept here for reference only —
+    treat none of these numbers as comparable to <a href="/evals">the current evals</a>.
+  </div>
+<% end %>
 
 <% if @groups.empty? %>
   <p class="empty">No eval results found in <code><%= settings.eval_results_dir %></code>. Run <code>python3 evals/run_bakery.py</code> to generate some.</p>

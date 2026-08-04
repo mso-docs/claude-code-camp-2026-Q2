@@ -59,6 +59,19 @@ module LogViz
     # actually got a valid (non-no-op) context.
     def trace_id = data["trace_id"]
 
+    # True once score.py started emitting mud_connected/content_matched
+    # (the c32631a harness-hardening commit) — false for rows scored before
+    # that, when task_success only required a non-empty output file with no
+    # check that the agent actually connected to the MUD or found the real
+    # target. A model that never connected has been observed writing a
+    # plausible-looking substitute (a bar's menu, having never found the
+    # bakery) and getting scored as a pass under the old rule. Mixing the
+    # two pools in one aggregate silently biases pass-rate comparisons
+    # toward whichever model happened to run more before the harness was
+    # hardened — see EvalResults.partition_by_scoring.
+    def current_scoring? = data.key?("mud_connected") && data.key?("content_matched")
+    def legacy_scoring? = !current_scoring?
+
     # Mutually exclusive bucket for what happened, in priority order (most
     # fundamental blocker first) — a single run can match more than one flag
     # (a model that never connected AND got killed by the wall-clock timeout
@@ -167,6 +180,15 @@ module LogViz
       out_of_budget: "Out of budget",
       other_fail: "Other fail",
     }.freeze
+
+    # [current, legacy] — see EvalRun#current_scoring? for the split.
+    # /evals and /scoreboard show current only by default so a model that
+    # happens to have more pre-hardening runs doesn't get an inflated
+    # apparent pass rate; /evals/legacy and /scoreboard/legacy show the
+    # older pool on its own, labeled as what it is rather than folded in.
+    def self.partition_by_scoring(runs)
+      runs.partition(&:current_scoring?)
+    end
 
     def self.load_all(results_dir)
       Dir.glob(File.join(results_dir, "*.jsonl")).sort.flat_map do |path|

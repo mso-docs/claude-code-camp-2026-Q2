@@ -50,6 +50,11 @@ body {
   color: #fff;
 }
 
+.topnav-sep {
+  color: #4a5260;
+  margin-left: 1.25rem;
+}
+
 main {
   max-width: 980px;
   margin: 0 auto;
@@ -1098,4 +1103,311 @@ table.eval-runs a:hover {
 .ansi-bg-blue    { background: #1f3a5c; }
 .ansi-bg-magenta { background: #4a2f4a; }
 .ansi-bg-cyan    { background: #1f4a4a; }
+
+/* Movement view — room path map + replay (see app.rb's movement_map_svg,
+   movement_layout, and views/movement.erb) */
+.move-summary {
+  display: flex;
+  gap: 1.25rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.move-map-wrap {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.5rem;
+  flex: 1 1 420px;
+  min-width: 320px;
+}
+
+.move-map {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.move-edge {
+  stroke: var(--border);
+  stroke-width: 1.5;
+}
+
+.move-path {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-opacity: 0.45;
+  stroke-linejoin: round;
+}
+
+.move-room-label {
+  fill: var(--muted);
+  font-size: 9px;
+  font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+}
+
+.move-room circle {
+  stroke: var(--panel);
+  stroke-width: 1.5;
+  /* fill transition is what makes /movement/replay's live heat recoloring
+     (see movement_replay.erb's script) read as a fading trail instead of a
+     hard cut; inert on the per-session view, whose fill is set once,
+     server-side, and never changes after render. */
+  transition: r 0.15s ease, fill 0.15s linear;
+}
+
+.move-room.current circle {
+  stroke: var(--accent);
+  stroke-width: 3;
+}
+
+.move-room.current .move-room-label {
+  fill: var(--accent);
+  font-weight: 700;
+}
+
+.player-dot {
+  fill: var(--accent);
+  stroke: var(--panel);
+  stroke-width: 2;
+  transition: cx 0.1s linear, cy 0.1s linear;
+}
+
+.move-table {
+  flex: 1 1 320px;
+  min-width: 260px;
+  border-collapse: collapse;
+}
+
+.move-table th,
+.move-table td {
+  border-top: 1px solid var(--border);
+  padding: 0.45rem 0.5rem;
+  text-align: left;
+  font-size: 0.82rem;
+}
+
+.move-table th {
+  color: var(--muted);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.move-table td {
+  font-family: ui-monospace, monospace;
+}
+
+.move-table tbody tr.current {
+  background: var(--user-bg);
+}
+
+.move-player-heading {
+  font-size: 1rem;
+  margin: 0 0 0.75rem;
+}
+
+.move-player {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.move-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.move-play-btn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.4rem 0.9rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.move-play-btn:hover {
+  opacity: 0.9;
+}
+
+.move-scrubber {
+  flex: 1 1 auto;
+}
+
+.move-speed {
+  font-size: 0.82rem;
+}
+
+.move-readout {
+  margin-top: 0.6rem;
+  font-size: 0.85rem;
+  display: flex;
+  gap: 0.6rem;
+  align-items: baseline;
+}
+
+.move-readout-room {
+  font-weight: 700;
+}
+
+.move-readout-time {
+  color: var(--muted);
+}
 .ansi-bg-white   { background: #d4d4d4; color: #1e1e1e; }
+
+/* Cross-session movement comparison (/movement, /movement/replay) — see
+   app.rb's movement_avg_bar_chart, movement_trend_chart, movement_legend,
+   movement_replay_map_svg */
+.move-compare-charts {
+  display: flex;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.move-compare-charts .scatter-wrap {
+  flex: 1 1 340px;
+  min-width: 300px;
+  overflow-x: auto;
+}
+
+.scatter-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 0.4rem;
+}
+
+.move-compare-table {
+  width: 100%;
+  margin-bottom: 1.5rem;
+}
+
+.trend-legend-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-right: 0.4rem;
+  vertical-align: middle;
+}
+
+.trend-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  padding: 0 0.25rem 0.5rem;
+}
+
+.trend-legend-item {
+  display: inline-flex;
+  align-items: center;
+}
+
+.trend-line {
+  fill: none;
+  stroke-width: 2;
+}
+
+.trend-dot {
+  stroke: var(--panel);
+  stroke-width: 2;
+}
+
+.move-scenario-links {
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.move-scenario-links a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.move-scenario-links a:hover {
+  text-decoration: underline;
+}
+
+.move-scenario-links .current {
+  font-weight: 700;
+}
+
+.move-replay-readout {
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.move-replay-readout tbody tr[data-model-id] td:first-child {
+  white-space: nowrap;
+}
+
+.heat-legend {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-bottom: 0.75rem;
+}
+
+.heat-legend-swatch {
+  width: 140px;
+  height: 10px;
+  border-radius: 4px;
+  background: linear-gradient(to right, #e1e0d9, #cde2fb, #9ec5f4, #5598e7, #2a78d6, #184f95, #0d366b);
+}
+
+.move-world-table {
+  margin-top: 1rem;
+}
+
+/* Small multiples (/movement/grid) — see app.rb's movement_grid_json and
+   the route comment on why steps are room-arrival counts, not wall-clock
+   time or a fixed command budget. */
+.move-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0.6rem;
+}
+
+.move-grid-panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.45rem;
+}
+
+.move-grid-panel-title {
+  font-size: 0.74rem;
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.move-grid-readout {
+  font-size: 0.68rem;
+  color: var(--muted);
+  margin-top: 0.3rem;
+  min-height: 1.1em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Grid panel labels get their font-size from movement_map_svg's
+   label_font_size argument directly (an SVG presentation attribute on
+   each <text>, not CSS) — that's also what the label-collision math in
+   app.rb's place_labels sizes its estimates against, so there's one
+   number instead of two that could quietly drift apart. */
