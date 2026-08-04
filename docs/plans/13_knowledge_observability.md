@@ -9,6 +9,14 @@
 reading from a `knowledge.sqlite3`, with a separate Change Log page for
 raw per-record history.
 
+> **Final-week integration:**
+> [plan 16](16_state_aware_execution.md) keeps this schema and evidence
+> model but changes the normal write path. Ordinary room, exit, entity, and
+> stat observations are reduced and persisted automatically during gameplay
+> tool dispatch; the explicit memory tools below become correction/note escape
+> hatches rather than mandatory calls after every action. Dashboard work is
+> deferred until that capability pipeline passes its eval gates.
+
 ## Goal
 
 Give the agent a structured, queryable belief store instead of the two

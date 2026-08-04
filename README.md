@@ -35,6 +35,8 @@ The main finding was that model capability alone did not determine success. A MU
 - [Ollama and Pi setup](docs/journal/0_preweek/ollama-pi-setup.md) — local model, coding harness, and Agent Skill setup
 - [OpenCode MUD guide](docs/opencode-mud-guide.md) — configure OpenCode, start the MUD evaluator, and run checkpointed tests
 - [Agent results](docs/journal/0_preweek/agent-results.md) — comparison of the initial bakery-task attempts
+- [Final-week capability journal](docs/journal/3_capable.md) — planned state-aware execution, efficient working memory, structured retrieval, navigation, and ablation evals
+- [Final-week implementation plan](docs/plans/16_state_aware_execution.md) — staged architecture, verification gates, risks, metrics, and definition of done
 - [`001_playing_agent`](week0_explore/explore_architecture/001_playing_agent) — agent instructions, prompts, state files, helper code, and completion reports
 - [`002_agent_skills`](week0_explore/explore_architecture/002_agent_skills) — Agent Skills architecture, reusable skills, and extended Qwen 3.6 test reports
 - [Current challenge](week0_explore/CHALLENGES.md) — level up and defeat the Massive Minotaur in the Newbie Zone
