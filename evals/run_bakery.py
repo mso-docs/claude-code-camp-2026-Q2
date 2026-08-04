@@ -20,12 +20,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 import time
 from pathlib import Path
 
 import bakery
 import boukensha_agent
+import ollama_catalog
 import return_to_midgaard
 import score
 
@@ -84,10 +86,100 @@ def parse_target(spec: str) -> tuple[str, str]:
     return backend, model
 
 
+def model_dir_name(backend: str, model: str) -> str:
+    """Filesystem-safe run directory for namespaced tags."""
+    return re.sub(r"[^A-Za-z0-9._-]+", "-", f"{backend}_{model}").strip("-")
+
+
+def print_ollama_catalog(models: list[ollama_catalog.OllamaModel]) -> None:
+    first_by_digest = {}
+    print(f"{len(models)} installed Ollama model tags")
+    print("TOOLS  MODEL                                      DIGEST        DETAILS                 CAPABILITIES")
+    for model in models:
+        alias = ""
+        if model.digest:
+            first = first_by_digest.setdefault(model.digest, model.name)
+            if first != model.name:
+                alias = f" alias-of={first}"
+        marker = "yes" if model.supports_tools else " no"
+        details = " ".join(v for v in (model.parameter_size, model.quantization) if v) or "-"
+        capabilities = ",".join(model.capabilities) or "-"
+        print(
+            f"{marker:>5}  {model.name:<42} {model.digest[:12]:<12}  "
+            f"{details:<22} {capabilities}{alias}"
+        )
+
+
+def probe_targets(
+    host: str,
+    targets: list[tuple[str, str]],
+    *,
+    timeout: float,
+) -> list[tuple[str, str]]:
+    """Keep non-Ollama targets and Ollama models passing a two-call probe."""
+    kept = []
+    for backend, model in targets:
+        if backend != "ollama":
+            kept.append((backend, model))
+            continue
+        print(f"[ollama:{model}] probing tool call + result round trip...", file=sys.stderr)
+        result = ollama_catalog.probe_tool_loop(host, model, timeout=timeout)
+        status = "PASS" if result.passed else "SKIP"
+        print(
+            f"[ollama:{model}] probe {status}: {result.status} — {result.detail} "
+            f"({result.duration_s:.1f}s)",
+            file=sys.stderr,
+        )
+        if result.passed:
+            kept.append((backend, model))
+    return kept
+
+
+def unique_targets(targets: list[tuple[str, str]]) -> list[tuple[str, str]]:
+    return list(dict.fromkeys(targets))
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--repetitions", type=int, default=5)
     ap.add_argument("--model", action="append", type=parse_target, dest="targets", help="backend:model, repeatable")
+    discovery = ap.add_mutually_exclusive_group()
+    discovery.add_argument(
+        "--all-ollama-tools",
+        action="store_true",
+        help="add every unique installed Ollama completion model advertising tool support",
+    )
+    discovery.add_argument(
+        "--all-ollama",
+        action="store_true",
+        help="add every unique installed Ollama completion model, including models without tool support",
+    )
+    ap.add_argument(
+        "--list-ollama-models",
+        action="store_true",
+        help="show the runtime Ollama catalog/capabilities resolved from configuration, then exit",
+    )
+    ap.add_argument(
+        "--include-ollama-aliases",
+        action="store_true",
+        help="keep multiple tags with the same Ollama digest (discovery deduplicates aliases by default)",
+    )
+    ap.add_argument(
+        "--probe-ollama-tools",
+        action="store_true",
+        help="before MUD trials, require each selected Ollama model to pass a tool-call and post-result completion probe",
+    )
+    ap.add_argument(
+        "--ollama-probe-only",
+        action="store_true",
+        help="run the selected Ollama tool-loop probes and exit without starting MUD trials",
+    )
+    ap.add_argument(
+        "--ollama-probe-timeout",
+        type=float,
+        default=120,
+        help="seconds allowed for each of the probe's two model requests (default: 120)",
+    )
     ap.add_argument(
         "--timeout", type=int, default=None,
         help="seconds per trial (default: auto-scaled from --reprompts and the scenario's MAX_TURNS — see default_timeout())",
@@ -97,7 +189,46 @@ def main() -> int:
         help="max_reprompts value to test, repeatable (default: 0 and 2, i.e. strict + reprompt)",
     )
     args = ap.parse_args()
-    targets = args.targets or DEFAULT_TARGETS
+
+    needs_catalog = args.list_ollama_models or args.all_ollama_tools or args.all_ollama
+    catalog = []
+    ollama_host = None
+    if needs_catalog or args.probe_ollama_tools or args.ollama_probe_only:
+        ollama_host = boukensha_agent.configured_ollama_host()
+    if needs_catalog:
+        try:
+            catalog = ollama_catalog.discover_models(ollama_host)
+        except ollama_catalog.OllamaCatalogError as e:
+            ap.error(f"could not discover Ollama models: {e}")
+
+    if args.list_ollama_models:
+        print_ollama_catalog(catalog)
+        return 0
+
+    targets = list(args.targets or [])
+    if args.all_ollama_tools or args.all_ollama:
+        discovered = ollama_catalog.select_models(
+            catalog,
+            tools_only=args.all_ollama_tools,
+            include_aliases=args.include_ollama_aliases,
+        )
+        targets.extend(("ollama", model.name) for model in discovered)
+    if not targets:
+        targets = list(DEFAULT_TARGETS)
+    targets = unique_targets(targets)
+
+    if args.probe_ollama_tools or args.ollama_probe_only:
+        selected_ollama_count = sum(1 for backend, _ in targets if backend == "ollama")
+        if selected_ollama_count == 0:
+            ap.error("Ollama probing requires at least one selected ollama:model target")
+        targets = probe_targets(ollama_host, targets, timeout=args.ollama_probe_timeout)
+        passed_ollama_count = sum(1 for backend, _ in targets if backend == "ollama")
+        if args.ollama_probe_only:
+            return 0 if passed_ollama_count == selected_ollama_count else 2
+        if not targets:
+            print("No selected models passed the Ollama tool-loop probe; no trials were run.", file=sys.stderr)
+            return 2
+
     reprompt_modes = args.reprompt_modes or [0, 2]
 
     RESULTS_DIR.mkdir(exist_ok=True)
@@ -113,7 +244,7 @@ def main() -> int:
                 trial_timeout = args.timeout if args.timeout is not None else default_timeout(bakery, max_reprompts)
                 print(f"[{backend}:{model} {mode_label}] timeout per trial: {trial_timeout}s", file=sys.stderr)
                 for rep in range(args.repetitions):
-                    run_dir = RESULTS_DIR / batch_id / f"{backend}_{model.replace(':', '-')}" / mode_label / str(rep)
+                    run_dir = RESULTS_DIR / batch_id / model_dir_name(backend, model) / mode_label / str(rep)
                     print(f"[{backend}:{model} {mode_label} rep {rep}] running...", file=sys.stderr)
 
                     try:

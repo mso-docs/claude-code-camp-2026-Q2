@@ -23,7 +23,7 @@ Ruby/Python differences anticipated going in, how it'll be verified, and an
 See also the living [architecture diagram](../architecture-baseline.md),
 updated alongside each step.
 
-## Week 2
+## Week 2 and final-week capability work
 
 New capability work in `week2_capable/` — not a Ruby→Python port step, so
 these plans don't follow the reference-diff format above.
@@ -31,3 +31,4 @@ these plans don't follow the reference-diff format above.
 - [13 · Structured Knowledge Base & Observability Dashboard](13_knowledge_observability.md)
 - [14 · Navigator Tool — Semantic Matching, Weighted Pathing & Reasoned Targets](14_navigator_tool.md)
 - [15 · OpenTelemetry Tracing & Error Logs](15_otel_tracing.md)
+- [16 · State-Aware Execution & Efficient Memory](16_state_aware_execution.md)

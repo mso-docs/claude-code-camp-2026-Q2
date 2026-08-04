@@ -20,7 +20,9 @@ Everything below assumes your shell is in the repository root.
   set in `.boukensha/.env` at the repo root (the eval runner reads that file
   automatically; see [`boukensha_agent.py`](boukensha_agent.py)'s
   `_load_env_vars`). `--model openrouter:<vendor>/<model>` accepts any
-  OpenRouter-catalog model slug without backend-side pre-registration.
+  OpenRouter-catalog model slug without backend-side pre-registration. Ollama
+  model names are also no longer statically allowlisted: the server determines
+  whether an explicitly selected tag exists.
   Unknown model IDs still use `boukensha/models.py`'s 32,000-token context
   fallback for agent compaction; add a verified entry there when the real
   context window is known.
@@ -89,6 +91,13 @@ Flags:
 |---|---|---|
 | `--repetitions N` | `5` | Trials per (model, mode) combination. LLM output is stochastic — a single run's pass/fail is close to meaningless; run enough reps to see a *rate*. |
 | `--model backend:model` | `ollama:qwen3.6:35b-a3b` | Repeatable — pass it more than once to test several models in one batch, e.g. `--model ollama:qwen3.6:35b-a3b --model anthropic:claude-haiku-4-5`. |
+| `--list-ollama-models` | off | Query the configured Ollama host, print installed tags and advertised capabilities, then exit. The private host is not printed. |
+| `--all-ollama-tools` | off | Add every unique installed completion model advertising Ollama's `tools` capability. Tags sharing a digest are deduplicated. |
+| `--all-ollama` | off | Add every unique installed completion model, including models without tool support that are expected to fail this harness. |
+| `--include-ollama-aliases` | off | Keep multiple tags that point at the same Ollama digest. |
+| `--probe-ollama-tools` | off | Before MUD trials, require selected Ollama models to emit a tool call and then complete after receiving its result. Failed models are reported and skipped. |
+| `--ollama-probe-only` | off | Run probes for the selected Ollama targets and exit without connecting to the MUD. Returns nonzero if any selected Ollama model fails. |
+| `--ollama-probe-timeout SECONDS` | `120` | Per-request timeout for the probe's two model requests. Loading a cold large model can dominate this time. |
 | `--reprompts N` | `0` and `2` (both) | Repeatable — see "Strict vs. reprompt" below. Passing this at all replaces the default entirely, so `--reprompts 0` alone runs strict-only. |
 | `--timeout SECONDS` | auto-scaled | Per-trial kill switch. Default scales off `--reprompts` and the scenario's `MAX_TURNS` (`run_bakery.default_timeout()`) — `(max_reprompts + 1) * MAX_TURNS * 15s + 60s`, e.g. ~7 min for strict, ~20 min for `reprompt2`. A flat 300s default silently killed 28% of bakery trials in the 2026-08-01 overnight batches, well before the agent's own iteration/reprompt budget was used up — see `docs/journal/2.5_evals.md`. Pass `--timeout` explicitly to override the auto-scaled value for every mode in the batch. |
 
@@ -107,6 +116,84 @@ python3 evals/run_bakery.py --reprompts 0 --reprompts 2 --repetitions 1
 # compare two models, 3 reps each, strict only
 python3 evals/run_bakery.py --model ollama:qwen3.6:35b-a3b --model ollama:qwen3.6:27b --reprompts 0 --repetitions 3
 ```
+
+## Ollama model discovery
+
+The eval runner resolves the server through `OLLAMA_HOST` from the existing
+process or repository `.boukensha/.env`, then `ollama.host` in
+`.boukensha/settings.yaml`, then Ollama's localhost default. No private server
+name is embedded in the runner, printed in its catalog, or written into eval
+results.
+
+List the catalog without loading a model or running the MUD:
+
+```bash
+python3 evals/run_bakery.py --list-ollama-models
+```
+
+Run one strict trial against every unique tag whose `/api/show` response
+advertises both `completion` and `tools`:
+
+```bash
+python3 evals/run_bakery.py \
+  --all-ollama-tools \
+  --repetitions 1 \
+  --reprompts 0
+```
+
+Capability metadata is only a compatibility hint. A model can advertise
+`tools` yet emit malformed arguments, ignore the result, repeatedly call the
+same tool, or be too specialized/small to solve the task. Add the two-request
+probe to screen those failures before paying for full trials:
+
+```bash
+python3 evals/run_bakery.py \
+  --all-ollama-tools \
+  --probe-ollama-tools \
+  --repetitions 1 \
+  --reprompts 0
+```
+
+The probe deliberately uses Boukensha's Ollama message format and
+`think: false`. First the model must call `boukensha_probe` with an exact
+argument. The original instruction also tells it what to do after the result.
+The result is then returned directly using Ollama's `tool_name` tool-result
+shape, with no extra user reminder, and the model must produce a normal final
+completion without calling the tool again. Outcomes such as `no_tool_call`,
+`bad_arguments`, `tool_loop`, and
+`no_final_completion` separate basic model/harness compatibility failures from
+later MUD reasoning failures.
+
+Probe one model without starting a gameplay trial:
+
+```bash
+python3 evals/run_bakery.py \
+  --model ollama:gemma4:latest \
+  --ollama-probe-only
+```
+
+Discovery deduplicates aliases by digest, preventing a versioned tag and its
+`latest` alias from silently running the same weights twice. Pass
+`--include-ollama-aliases` when alias behavior itself is what you want to test.
+
+### Gemma caveat
+
+"Gemma supports tools" is not one model-wide fact. Check the exact tag. In the
+catalog inspected on 2026-08-04, the installed Gemma 2 tags advertised
+`completion` but not `tools`, while the Gemma 4 tags advertised both. Gemma 4
+can therefore enter the tool probe; Gemma 2 is excluded by
+`--all-ollama-tools`.
+
+Even for Gemma 4, emitting the first tool call does not prove that the full
+agent loop works. The observed "stuck on tool calls" behavior could occur after
+the result is returned, or later on Boukensha's larger and less precise MUD
+schemas. The two-request probe isolates the first case. If Gemma 4 passes the
+probe but loops in a MUD trial, inspect the transcript for repeated calls,
+invalid optional arguments, or failure to interpret the game result. That
+points away from basic Ollama serialization and toward schema, prompt, or model
+behavior. The explicit required/optional schema cleanup in
+`docs/plans/16_state_aware_execution.md` remains relevant because the current
+adapters still mark every declared property required.
 
 ## OpenCode comparison runner
 

@@ -11,6 +11,13 @@ the location)" — feeding a single `navigator` tool, plus notes calling
 out semantic name-matching, Dijkstra specifically, and an unresolved
 hazard question.
 
+> **Final-week integration:**
+> [plan 16](16_state_aware_execution.md) places this resolver/pathfinder behind
+> harness-maintained working state and adds an interruption-safe `navigate_to`
+> executor. This plan remains authoritative for matching and weighted routing;
+> plan 16 defines when the capability is exposed, how every step is verified,
+> and how its reduction in model round trips is evaluated.
+
 ## Goal
 
 One `navigator` tool the agent calls with a target and its current

@@ -4,6 +4,9 @@ from .base import Base
 
 
 class Ollama(Base):
+    # Known metadata overrides, not an allowlist. Ollama itself is the source
+    # of truth for whether a model is installed; dynamically discovered or
+    # explicitly named server models use the conservative fallback below.
     MODELS = {
         "gemma4:e4b": {
             "context_window": 128_000,
@@ -100,10 +103,27 @@ class Ollama(Base):
         },
     }
 
+    DEFAULT_CONTEXT_WINDOW = 32_000
+
     def __init__(self, *, model: str, host: str = "http://localhost:11434") -> None:
         super().__init__()
         self.host = host
         self.configure_model(model)
+
+    @classmethod
+    def validate_model(cls, model: str) -> str:
+        model = str(model).strip()
+        if not model:
+            raise ValueError("Ollama model name cannot be empty")
+        return model
+
+    def configure_model(self, model: str) -> None:
+        self.model = self.validate_model(model)
+        self.model_info = self.MODELS.get(self.model) or {
+            "context_window": self.DEFAULT_CONTEXT_WINDOW,
+            "cost_per_million": {"input": 0.0, "output": 0.0},
+            "usage_unit": "local_compute",
+        }
 
     def to_messages(self, system, messages) -> list[dict]:
         system_message = [{"role": "system", "content": system}]
